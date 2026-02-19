@@ -75,13 +75,6 @@ function postPhase(phase: PipelinePhase, message: string): void {
 // TREE TRAVERSAL
 // ============================================================
 
-/**
- * Walks a subtree depth-first.
- * - Calls onInstance for every InstanceNode and does NOT recurse further into it.
- * - Calls onRegular for every other node type and recurses into its children.
- *
- * This guarantees no node is silently skipped.
- */
 async function traverseNodeTree(
   root: SceneNode,
   onInstance: (node: InstanceNode) => Promise<void>,
@@ -101,10 +94,6 @@ async function traverseNodeTree(
   }
 }
 
-/**
- * Walks every node in a subtree, including inside instances.
- * Used only for collecting variable bindings from reference frames.
- */
 async function walkAll(
   root: SceneNode,
   callback: (node: SceneNode) => Promise<void>
@@ -121,22 +110,6 @@ async function walkAll(
 // VARIABLE BINDING EXTRACTION
 // ============================================================
 
-/**
- * Extracts all variable bindings present on a node.
- *
- * Handles:
- *   - Scalar boundVariables (spacing, opacity, radius, typography tokens…)
- *   - Fills paint boundVariables
- *   - Strokes paint boundVariables
- *   - Effects boundVariables
- *
- * NOTE on typography variables in TextNode:
- *   Figma stores font-related variable bindings (fontSize, lineHeight, etc.)
- *   directly in node.boundVariables as VARIABLE_ALIAS entries, the same way
- *   it stores spacing/opacity. They are covered by the scalar section below.
- *   No special extraction is needed — the key fix is in applySubstitution:
- *   we must load fonts BEFORE calling setBoundVariable on any TEXT node.
- */
 async function extractVariableBindings(node: SceneNode): Promise<VariableBinding[]> {
   const bindings: VariableBinding[] = [];
 
@@ -144,13 +117,11 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
   if ("boundVariables" in node && node.boundVariables) {
     const bv = node.boundVariables as Record<string, any>;
     for (const prop of Object.keys(bv)) {
-      // fills / strokes / effects are arrays — handled separately below
       if (prop === "fills" || prop === "strokes" || prop === "effects") continue;
 
       const alias = bv[prop] as any;
       if (!alias) continue;
 
-      // boundVariables may hold a single alias or an array (for mixed text ranges)
       const aliases: any[] = Array.isArray(alias) ? alias : [alias];
       for (const a of aliases) {
         if (!a || a.type !== "VARIABLE_ALIAS" || !a.id) continue;
@@ -165,7 +136,7 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
             variableId: variable.id, variableName: variable.name,
             collectionName: collection?.name ?? "",
           });
-        } catch { /* variable inaccessible (external library) */ }
+        } catch { /* variable inaccessible */ }
       }
     }
   }
@@ -245,45 +216,155 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
     }
   }
 
+  // ── 4b. effectStyleId (Effect Styles from external libraries) ────────────
+  // Same pattern as textStyleId: boundVariables is empty, the binding lives in
+  // effectStyleId. We resolve the style name and emit a synthetic binding.
+  if ("effectStyleId" in node) {
+    const styleId = (node as any).effectStyleId as string;
+    if (styleId && styleId.length > 0) {
+      try {
+        const style = await figma.getStyleByIdAsync(styleId);
+        if (style && style.name) {
+          bindings.push({
+            nodeId: node.id, nodeName: node.name,
+            property: "effectStyleId",
+            variableId: styleId,
+            variableName: style.name,
+            collectionName: "EffectStyle",
+          });
+        }
+      } catch { /* style inaccessible */ }
+    }
+  }
+
+  // ── 5. TextNode typography variables — full debug probe ──────────────
+  if (node.type === "TEXT") {
+    const textNode = node as TextNode;
+
+    // ── Typography via textStyleId ────────────────────────────────────────
+    // Figma does NOT expose typography variable bindings in boundVariables
+    // for text nodes — especially from external libraries.
+    // The only mechanism is: a Text Style is applied (textStyleId), and that
+    // style was created/bound to a variable collection in the library.
+    // We surface the textStyleId as a synthetic binding keyed by the style name,
+    // so the frame-map lookup can match by normalized style name.
+    //
+    // getStyledTextSegments only accepts these fields: fontSize, lineHeight,
+    // letterSpacing, paragraphSpacing, paragraphIndent, fontName, fontWeight,
+    // fontStyle, textCase, textDecoration, fills, textStyleId, fillStyleId,
+    // boundVariables. fontFamily is NOT valid.
+    const VALID_SEGMENT_FIELDS: any[] = [
+      "fontSize", "lineHeight", "letterSpacing",
+      "paragraphSpacing", "paragraphIndent",
+      "fontName", "fontWeight", "fontStyle",
+      "textStyleId", "boundVariables",
+    ];
+
+    const seenKeys = new Set(bindings.map(b => b.variableId + "|" + b.property));
+
+    try {
+      const segments = textNode.getStyledTextSegments(VALID_SEGMENT_FIELDS);
+      for (const seg of segments) {
+        const s = seg as any;
+
+        // 1. Real variable alias in segment boundVariables (scalar typo tokens)
+        if (s.boundVariables && typeof s.boundVariables === "object") {
+          for (const prop of Object.keys(s.boundVariables)) {
+            const alias = s.boundVariables[prop] as any;
+            if (!alias) continue;
+            const aliases: any[] = Array.isArray(alias) ? alias : [alias];
+            for (const a of aliases) {
+              if (!a || a.type !== "VARIABLE_ALIAS" || !a.id) continue;
+              const dk = a.id + "|" + prop;
+              if (seenKeys.has(dk)) continue;
+              seenKeys.add(dk);
+              try {
+                const variable = await figma.variables.getVariableByIdAsync(a.id);
+                if (!variable) continue;
+                const collection = await figma.variables.getVariableCollectionByIdAsync(variable.variableCollectionId);
+                bindings.push({ nodeId: node.id, nodeName: node.name, property: prop, variableId: variable.id, variableName: variable.name, collectionName: collection?.name ?? "" });
+              } catch { /* inaccessible */ }
+            }
+          }
+        }
+
+        // 2. textStyleId — resolve the style and treat its name as the variable name
+        // This is how "Paragraph/XXS" applied from a library surfaces in the plugin.
+        if (s.textStyleId && typeof s.textStyleId === "string") {
+          const styleId = s.textStyleId as string;
+          const dk = "style|" + styleId;
+          if (!seenKeys.has(dk)) {
+            seenKeys.add(dk);
+            try {
+              const style = await figma.getStyleByIdAsync(styleId);
+              if (style && style.name) {
+                // Emit a synthetic binding: variableId = styleId, variableName = style.name
+                // applySubstitution will handle property === "textStyleId" specially.
+                bindings.push({
+                  nodeId: node.id, nodeName: node.name,
+                  property: "textStyleId",
+                  variableId: styleId,
+                  variableName: style.name,
+                  collectionName: "TextStyle",
+                });
+              }
+            } catch { /* style inaccessible */ }
+          }
+        }
+      }
+    } catch { /* getStyledTextSegments failed */ }
+  }
+
   return bindings;
 }
 
 // ============================================================
-// FRAME VARIABLE MAP
+// FRAME VARIABLE MAP  +  FRAME STYLE MAP
 // ============================================================
 
-/**
- * Walks all reference frames and builds a normalizedName → Variable lookup map.
- * This is the source of truth for what substitutions should be applied.
- */
-async function buildFrameVariableMap(frames: FrameNode[]): Promise<Map<string, Variable>> {
-  const map = new Map<string, Variable>();
+// Two maps are built from the reference frames:
+//   frameVarMap   — normalized variable name  → Variable   (colors, spacing, etc.)
+//   frameStyleMap — normalized style name     → styleId    (text styles / typography)
+//
+// Text style bindings use property="textStyleId" and their variableId IS the styleId.
+// They cannot go through figma.variables.getVariableByIdAsync, so they live separately.
+
+interface FrameMaps {
+  varMap:   Map<string, Variable>;
+  styleMap: Map<string, string>;  // normalizedName → styleId
+}
+
+async function buildFrameMaps(frames: FrameNode[]): Promise<FrameMaps> {
+  const varMap   = new Map<string, Variable>();
+  const styleMap = new Map<string, string>();
+
   for (const frame of frames) {
     await walkAll(frame, async (node) => {
       const bindings = await extractVariableBindings(node);
       for (const b of bindings) {
         const key = normalizeName(b.variableName);
-        if (!map.has(key)) {
-          try {
-            const v = await figma.variables.getVariableByIdAsync(b.variableId);
-            if (v) map.set(key, v);
-          } catch { /* skip */ }
+
+        if (b.property === "textStyleId" || b.property === "effectStyleId") {
+          // b.variableId holds the styleId
+          if (!styleMap.has(key)) styleMap.set(key, b.variableId);
+        } else {
+          if (!varMap.has(key)) {
+            try {
+              const v = await figma.variables.getVariableByIdAsync(b.variableId);
+              if (v) varMap.set(key, v);
+            } catch { /* skip */ }
+          }
         }
       }
     });
   }
-  return map;
+  return { varMap, styleMap };
 }
 
 // ============================================================
 // FONT LOADING
 // ============================================================
 
-/**
- * Loads all fonts used by a TextNode before any setBoundVariable call.
- * Figma requires fonts to be loaded before modifying text properties —
- * including variable-bound typography tokens.
- */
 async function ensureFontsLoaded(node: TextNode): Promise<void> {
   try {
     if (node.fontName === figma.mixed) {
@@ -312,14 +393,18 @@ async function ensureFontsLoaded(node: TextNode): Promise<void> {
 
 /**
  * Applies a single variable binding substitution to a node.
- * Must never be called on an InstanceNode.
+ *
+ * Fills / Strokes  → figma.variables.setBoundVariableForPaint  (same as before ✅)
+ * Effects          → figma.variables.setBoundVariableForEffect  (NEW — mirrors paint API)
+ * Typography       → load fonts first, then node.setBoundVariable (same scalar path)
+ * Generic scalars  → node.setBoundVariable
  */
 async function applySubstitution(
   node: SceneNode,
   binding: VariableBinding,
   newVariable: Variable
 ): Promise<boolean> {
-  if (node.type === "INSTANCE") return false; // hard guard
+  if (node.type === "INSTANCE") return false;
 
   try {
     const { property, paintIndex, paintSubProp } = binding;
@@ -330,16 +415,23 @@ async function applySubstitution(
       const paints = [...node.fills] as any[];
       const paint  = paints[idx];
       if (!paint) return false;
+
       if (paintSubProp === "color" && paint.type === "SOLID") {
         paints[idx] = figma.variables.setBoundVariableForPaint(
           paint as SolidPaint, "color", newVariable
         );
       } else if (paintSubProp) {
+        // opacity and any other paint sub-property: manual boundVariables spread
         paints[idx] = {
           ...paint,
-          boundVariables: { ...paint.boundVariables, [paintSubProp]: { type: "VARIABLE_ALIAS", id: newVariable.id } },
+          boundVariables: {
+            ...paint.boundVariables,
+            [paintSubProp]: { type: "VARIABLE_ALIAS", id: newVariable.id },
+          },
         };
-      } else { return false; }
+      } else {
+        return false;
+      }
       (node as any).fills = paints;
       return true;
     }
@@ -349,39 +441,55 @@ async function applySubstitution(
       const paints = [...node.strokes] as any[];
       const paint  = paints[idx];
       if (!paint) return false;
+
       if (paintSubProp === "color" && paint.type === "SOLID") {
         paints[idx] = figma.variables.setBoundVariableForPaint(
           paint as SolidPaint, "color", newVariable
         );
       } else if (paintSubProp) {
+        // opacity and any other paint sub-property: manual boundVariables spread
         paints[idx] = {
           ...paint,
-          boundVariables: { ...paint.boundVariables, [paintSubProp]: { type: "VARIABLE_ALIAS", id: newVariable.id } },
+          boundVariables: {
+            ...paint.boundVariables,
+            [paintSubProp]: { type: "VARIABLE_ALIAS", id: newVariable.id },
+          },
         };
-      } else { return false; }
+      } else {
+        return false;
+      }
       (node as any).strokes = paints;
       return true;
     }
 
-    // ── Effects ──────────────────────────────────────────────────────────
+    // ── Effects ───────────────────────────────────────────────────────────
+    // MUST use setBoundVariableForEffect — manual spread does NOT persist in Figma.
+    // This mirrors exactly how setBoundVariableForPaint works for fills/strokes.
     if (property === "effects" && "effects" in node && Array.isArray(node.effects)) {
-      const effects = [...node.effects] as any[];
+      const effects = [...node.effects] as Effect[];
       const effect  = effects[idx];
       if (!effect || !paintSubProp) return false;
-      effects[idx] = {
-        ...effect,
-        boundVariables: { ...effect.boundVariables, [paintSubProp]: { type: "VARIABLE_ALIAS", id: newVariable.id } },
-      };
+
+      // setBoundVariableForEffect is the correct API (available since plugin API 1.0)
+      const updatedEffect = figma.variables.setBoundVariableForEffect(
+        effect,
+        paintSubProp as VariableBindableEffectField,
+        newVariable
+      );
+      effects[idx] = updatedEffect;
       (node as any).effects = effects;
       return true;
     }
 
-    // ── Typography (TextNode) ────────────────────────────────────────────
-    // MUST load fonts before any setBoundVariable call on a TextNode,
-    // even for non-character properties like fontSize, lineHeight, etc.
+    // ── Typography (TextNode) ─────────────────────────────────────────────
     if (node.type === "TEXT") {
       await ensureFontsLoaded(node as TextNode);
-      (node as any).setBoundVariable(property, newVariable);
+
+      // Scalar typography variable (fontSize, lineHeight, etc.)
+      (node as TextNode).setBoundVariable(
+        property as VariableBindableTextField,
+        newVariable
+      );
       return true;
     }
 
@@ -398,21 +506,65 @@ async function applySubstitution(
   }
 }
 
-/**
- * Extracts all bindings from a node and applies any substitution whose
- * variable name matches an entry in frameVarMap (and is actually different).
- */
 async function applySubstitutionsToNode(
   node: SceneNode,
-  frameVarMap: Map<string, Variable>
+  maps: FrameMaps
 ): Promise<SubstitutionResult[]> {
   const results: SubstitutionResult[] = [];
   const bindings = await extractVariableBindings(node);
 
   for (const binding of bindings) {
-    const frameVar = frameVarMap.get(normalizeName(binding.variableName));
+    const key = normalizeName(binding.variableName);
+
+    if (binding.property === "textStyleId") {
+      const targetStyleId = maps.styleMap.get(key);
+      if (!targetStyleId) continue;
+      if (targetStyleId === binding.variableId) continue;
+
+      let ok = false;
+      try {
+        await ensureFontsLoaded(node as TextNode);
+        await (node as TextNode).setTextStyleIdAsync(targetStyleId);
+        ok = true;
+      } catch (err) {
+        console.error(`textStyleId swap failed on "${node.name}":`, err);
+      }
+      results.push({
+        status: ok ? "success" : "failed",
+        nodeId: binding.nodeId, nodeName: binding.nodeName, nodeType: node.type,
+        property: "textStyleId",
+        oldVariableName: binding.variableName,
+        newVariableName: binding.variableName,
+      });
+      continue;
+    }
+
+    if (binding.property === "effectStyleId") {
+      const targetStyleId = maps.styleMap.get(key);
+      if (!targetStyleId) continue;
+      if (targetStyleId === binding.variableId) continue;
+
+      let ok = false;
+      try {
+        await (node as any).setEffectStyleIdAsync(targetStyleId);
+        ok = true;
+      } catch (err) {
+        console.error(`effectStyleId swap failed on "${node.name}":`, err);
+      }
+      results.push({
+        status: ok ? "success" : "failed",
+        nodeId: binding.nodeId, nodeName: binding.nodeName, nodeType: node.type,
+        property: "effectStyleId",
+        oldVariableName: binding.variableName,
+        newVariableName: binding.variableName,
+      });
+      continue;
+    }
+
+    // Regular variable substitution
+    const frameVar = maps.varMap.get(key);
     if (!frameVar) continue;
-    if (frameVar.id === binding.variableId) continue; // already the correct variable
+    if (frameVar.id === binding.variableId) continue;
 
     const ok = await applySubstitution(node, binding, frameVar);
     results.push({
@@ -430,18 +582,6 @@ async function applySubstitutionsToNode(
 // TARGET RESOLUTION
 // ============================================================
 
-/**
- * Resolves the list of ComponentNodes to walk from the raw target selection.
- *
- * ComponentSet  → all direct ComponentNode children (variants)
- * ComponentNode → itself
- * InstanceNode  → resolves its main component (so we modify the source, not the instance)
- *
- * Returns both the component list AND the set of their IDs.
- * The ID set is used in Phase 2 to decide whether a discovered instance
- * is "in scope" (main component was selected → skip silently) or
- * "external" (main component not selected → report as ignored).
- */
 async function resolveComponentNodes(targets: TargetNode[]): Promise<{
   components: ComponentNode[];
   selectedComponentIds: Set<string>;
@@ -482,18 +622,9 @@ async function resolveComponentNodes(targets: TargetNode[]): Promise<{
 // PHASE 1 — PROCESS COMPONENT NODES
 // ============================================================
 
-/**
- * Walks every ComponentNode's subtree.
- *
- * - Non-instance nodes: apply substitutions immediately.
- * - InstanceNodes: collect for Phase 2 classification. Never modify.
- *
- * All instances found are deduplicated by nodeId (the same instance can
- * appear as a child of multiple variants).
- */
 async function processComponentNodes(
   components: ComponentNode[],
-  frameVarMap: Map<string, Variable>
+  maps: FrameMaps
 ): Promise<{
   phase1Results:  SubstitutionResult[];
   foundInstances: InstanceNode[];
@@ -505,15 +636,13 @@ async function processComponentNodes(
   for (const component of components) {
     await traverseNodeTree(
       component,
-      // onInstance — queue for Phase 2, never touch
       async (inst) => {
         if (seenInstanceIds.has(inst.id)) return;
         seenInstanceIds.add(inst.id);
         foundInstances.push(inst);
       },
-      // onRegular — apply substitutions
       async (node) => {
-        const results = await applySubstitutionsToNode(node, frameVarMap);
+        const results = await applySubstitutionsToNode(node, maps);
         phase1Results.push(...results);
       }
     );
@@ -526,19 +655,6 @@ async function processComponentNodes(
 // PHASE 2 — CLASSIFY & REPORT INSTANCES
 // ============================================================
 
-/**
- * Classifies each instance found during Phase 1.
- *
- * RULE: An instance is only reported as "ignored" if its main component
- * is NOT in the selectedComponentIds set (i.e. it's an external component
- * whose source we don't control in this run).
- *
- * If the main component IS in scope, the substitutions have already been
- * applied to it in Phase 1 — the instance will inherit them automatically
- * through Figma's normal override propagation. We do NOT report those.
- *
- * This prevents the false-positive "ignored" entries that confused the user.
- */
 async function processInstanceNodes(
   instances: InstanceNode[],
   selectedComponentIds: Set<string>
@@ -551,14 +667,11 @@ async function processInstanceNodes(
       mainComponent = await node.getMainComponentAsync();
     } catch { /* external / inaccessible */ }
 
-    const mainId   = mainComponent?.id ?? null;
-    const inScope  = mainId !== null && selectedComponentIds.has(mainId);
+    const mainId  = mainComponent?.id ?? null;
+    const inScope = mainId !== null && selectedComponentIds.has(mainId);
 
-    // If the main component was processed in Phase 1 → skip silently.
-    // The instance will inherit the changes automatically.
     if (inScope) continue;
 
-    // Only external / out-of-scope instances are reported.
     results.push({
       status: "skipped_instance",
       nodeId: node.id,
@@ -579,7 +692,7 @@ async function processInstanceNodes(
 
 interface PipelineReport {
   phase1Results: SubstitutionResult[];
-  phase2Results: SubstitutionResult[];  // kept for UI compatibility (instances)
+  phase2Results: SubstitutionResult[];
   successCount:  number;
   failedCount:   number;
   skippedCount:  number;
@@ -596,7 +709,7 @@ function generateReport(
 
   return {
     phase1Results,
-    phase2Results: instanceResults,  // UI reads from phase2Results for the skip panel
+    phase2Results: instanceResults,
     successCount,
     failedCount,
     skippedCount,
@@ -613,26 +726,23 @@ async function runPipeline(
   frames: FrameNode[]
 ): Promise<PipelineReport> {
 
-  // ── Collect frame variable map ──────────────────────────────────────────
   postPhase("collecting", "Coletando variáveis dos frames de referência...");
-  const frameVarMap = await buildFrameVariableMap(frames);
-  postPhase("collecting", `${frameVarMap.size} variável(eis) encontrada(s) nos frames.`);
+  const maps = await buildFrameMaps(frames);
+  const totalMapped = maps.varMap.size + maps.styleMap.size;
+  postPhase("collecting", `${totalMapped} token(s) encontrado(s) nos frames (${maps.varMap.size} variáveis, ${maps.styleMap.size} estilos de texto).`);
 
-  // ── Resolve component nodes ─────────────────────────────────────────────
   const { components, selectedComponentIds } = await resolveComponentNodes(targets);
 
-  // ── Phase 1: Apply substitutions to component subtrees ─────────────────
   postPhase("phase1_components",
     `Fase 1 — Aplicando substituições em ${components.length} componente(s)...`);
 
   const { phase1Results, foundInstances } =
-    await processComponentNodes(components, frameVarMap);
+    await processComponentNodes(components, maps);
 
   const p1Success = phase1Results.filter(r => r.status === "success").length;
   postPhase("phase1_components",
     `Fase 1 concluída — ${p1Success} substituição(ões) aplicada(s).`);
 
-  // ── Phase 2: Classify instances ─────────────────────────────────────────
   postPhase("phase2_instances",
     `Fase 2 — Classificando ${foundInstances.length} instância(s)...`);
 
@@ -697,7 +807,6 @@ figma.on("selectionchange", () => { analyzeSelection(); });
 
 figma.ui.onmessage = async (msg) => {
 
-  // ── RUN ──────────────────────────────────────────────────────────────────
   if (msg.type === "run") {
     const selection = figma.currentPage.selection;
     const targets: TargetNode[] = [];
@@ -735,12 +844,10 @@ figma.ui.onmessage = async (msg) => {
     }
   }
 
-  // ── ANALYZE ───────────────────────────────────────────────────────────────
   if (msg.type === "analyze") {
     await analyzeSelection();
   }
 
-  // ── SELECT NODES ──────────────────────────────────────────────────────────
   if (msg.type === "select-nodes") {
     const ids: string[] = msg.nodeIds ?? [];
     const nodes: SceneNode[] = [];
