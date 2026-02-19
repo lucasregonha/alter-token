@@ -1,1942 +1,469 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8" />
-
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    & h4 {
-      font-weight: 600;
-      font-size: 14px;
-      margin: 0;
-      display: inline-block;
-      line-height: 14px;
-    }
-
-
-
-    html,
-    body {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    html, body {
       height: 100%;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background-color: #F4F4F5;
-    }
-
-    body {
-      font-family: "Inter";
-      padding: 12px;
-      margin: 0;
-      font-size: 14px;
-      font-weight: 500;
-    }
-
-    .h3 {
-      font-weight: normal;
-      font-size: 14px;
-      margin: 0;
-      display: inline-block;
-      line-height: 14px;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 4px;
-      border-bottom: 1px solid #E4E4E7;
-      width: fit-content;
-    }
-
-    .tab {
-      font-size: 14px;
-      color: #18181B;
-      font-weight: 500;
-      padding: 8px 16px;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      font-weight: 500;
-    }
-
-    .tab.active {
-      color: #4361EE;
-      border-bottom-color: #4361EE;
-    }
-
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .group {
-      display: flex;
-      align-items: center;
-      padding: 8px;
-      border-radius: 8px;
-      margin-bottom: 6px;
-      cursor: pointer;
-    }
-
-    .group-left {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .group-right {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-    }
-
-    .swatch {
-      width: 26px;
-      height: 26px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
-    }
-
-    .type-label {
-      font-size: 9px;
-      color: #555;
-      line-height: 1;
-    }
-
-    .detail {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .detail-swatch {
-      width: 64px;
-      height: 64px;
-      border-radius: 12px;
-      border: 1px solid #ddd;
-    }
-
-    .text-preview {
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background: white;
-      text-align: center;
-      width: 64px;
-      height: 64px;
-      box-sizing: border-box;
-      text-align: center;
-      bottom: auto;
-      top: auto;
-    }
-
-    .text-info {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 11px;
-      color: #555;
-      text-align: center;
-    }
-
-    #hex-code {
-      font-size: 12px;
-      color: #333;
-    }
-
-    .nav {
-      display: flex;
-      gap: 8px;
-    }
-
-    button {
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      cursor: pointer;
-    }
-
-    .back {
-      margin-top: 20px;
-      font-size: 11px;
-      cursor: pointer;
-      text-decoration: underline;
-    }
-
-    .select-all {
-      margin-top: 10px;
-      background-color: #F4F4F5;
-      color: #4361EE;
-    }
-
-    .empty {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 346px;
-      text-align: center;
-      color: #777;
-    }
-
-    .empty-2 {
-      border: 2px solid #E4E4E7;
-      border-radius: 8px;
-      display: flex;
-      gap: 8px;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 287px;
-      text-align: center;
-      color: #777;
-    }
-
-    .switch-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-family: sans-serif;
-      font-size: 14px;
-    }
-
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 32px;
-      height: 16px;
-    }
-
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(38, 39, 43, 0.08);
-      transition: 0.4s;
-      border-radius: 24px;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 12px;
-      width: 12px;
-      left: 2px;
-      bottom: 2.2px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-    }
-
-    input:checked+.slider {
-      background-color: #4361EE;
-      /* cor do switch ligado */
-    }
-
-    input:checked+.slider:before {
-      transform: translateX(16px);
-    }
-
-    .app-wrapper {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-
-      & img {
-        width: 40px;
-        height: 40px;
-      }
-    }
-
-    .group {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 4px;
-      /* padding em volta de tudo */
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.2s;
-      position: relative;
-    }
-
-    .group:hover {
-      background: rgba(112, 112, 123, 0.16);
-    }
-
-    .group::after {
-      content: "Ver mais";
-      position: absolute;
-      right: 8px;
-      bottom: 10px;
-      transform: translateY(-50%);
-      font-size: 12px;
-      font-weight: 500;
-      color: rgba(24, 24, 27, 0.72);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
-    }
-
-    .group:hover::after {
-      opacity: 1;
-    }
-
-    .swatch-large {
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      flex-shrink: 0;
-    }
-
-    .group-info {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .group-info-top {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      /* espaço entre HEX e tipo */
-    }
-
-    .group-info-bottom {
-      font-size: 12px;
-      color: rgba(24, 24, 27, 0.72);
-    }
-
-    .app-wrapper-2 {
-      border: 2px solid #E4E4E7;
-      /* borda ao redor da caixa */
-      border-radius: 8px;
-      height: 287px;
-      /* altura fixa */
-      overflow-y: auto;
-      /* scroll vertical quando passar do tamanho */
-      padding: 12px;
-      /* padding interno da caixa */
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      /* espaço entre os itens */
-
-    }
-
-    h4+.app-wrapper-2 {
-      margin-top: 8px;
-    }
-
-
-    .group-info-top .hex {
-      font-size: 12px;
-      color: #18181B;
-    }
-
-    .group-info-top .type-label {
-      font-size: 12px;
-      color: rgba(24, 24, 27, 0.72);
-    }
-
-    /* Loading Spinner */
-    .spinner-container {
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 16px;
-      position: fixed;
-      top: 62px;
-      left: 12px;
-      right: 12px;
-      bottom: 12px;
-      background-color: #F4F4F5;
-      z-index: 100;
-      pointer-events: none;
-    }
-
-    .spinner-container.show {
-      display: flex;
-      pointer-events: auto;
-    }
-
-    .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid #e0e0e0;
-      border-top: 3px solid #4361EE;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      box-sizing: border-box;
-    }
-
-    .spinner-text {
-      font-size: 13px;
-      color: #666;
       font-family: "Inter", sans-serif;
+      font-size: 13px;
+      background: #F4F4F5;
+      color: #18181B;
     }
 
-    @keyframes spin {
-      from {
-        transform: rotate(0deg);
-      }
-
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    /* NEW STYLES FOR COLOR DETAIL */
-    .detail-color-wrapper {
+    body {
       display: flex;
       flex-direction: column;
-      height: 100%;
-      gap: 12px;
-    }
-
-    .detail-color-container {
-      display: flex;
-      gap: 8px;
-      flex: 1;
+      padding: 14px;
+      gap: 10px;
       overflow: hidden;
     }
 
-    .detail-left {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 8px;
-      width: 120px;
+    /* ── HEADER ──────────────────────────────────────────── */
+    .header h1 { font-size: 14px; font-weight: 600; }
+    .header .subtitle { font-size: 11px; color: rgba(24,24,27,0.5); margin-top: 2px; line-height: 1.4; }
+
+    /* ── SELECTION ───────────────────────────────────────── */
+    .selection-panel { display: flex; flex-direction: column; gap: 6px; }
+
+    .panel-label {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: rgba(24,24,27,0.45); padding: 0 2px;
     }
 
-    .detail-swatch-large {
-      width: 64px;
-      height: 64px;
-      border-radius: 16px;
-      border: 2px solid #E4E4E7;
-    }
-
-    .detail-info {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .detail-label {
-      font-size: 12px;
-      font-weight: 500;
-      color: #18181B;
-      align-self: flex-start;
-    }
-
-    .detail-info #hex-code {
-      font-size: 14px;
-      font-weight: 600;
-      color: #18181B;
-      width: 120px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      text-align: center;
-    }
-
-    .detail-info .type-label {
-      font-size: 12px;
-      color: rgba(24, 24, 27, 0.6);
-    }
-
-    .detail-nav {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      justify-content: space-between;
-    }
-
-
-
-    .nav-counter {
-      font-size: 12px;
-      color: rgba(24, 24, 27, 0.6);
-      width: 60px;
-      text-align: center;
-      white-space: nowrap;
-    }
-
-    .detail-right {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      overflow: hidden;
-    }
-
-    .detail-right h4 {
-      font-size: 14px;
-      font-weight: 600;
-      color: #18181B;
-      margin: 0;
-      margin-bottom: 4px;
-    }
-
-    .tokens-container {
-      border: 1px solid #E4E4E7;
+    .tag-row {
+      display: flex; flex-wrap: wrap; gap: 5px;
+      padding: 8px 10px;
+      background: white;
       border-radius: 8px;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      overflow: hidden;
-      height: 273px;
-    }
-
-    .tokens-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      flex: 1;
-      overflow-y: auto;
-    }
-
-    .token-item {
-      display: flex;
+      border: 1.5px solid #E4E4E7;
+      min-height: 38px;
       align-items: center;
-      gap: 8px;
-      padding: 4px 4px;
-      border-radius: 6px;
-      background: rgba(38, 39, 43, 0.08);
-      height: 28px;
-      cursor: pointer;
-      transition: all 0.2s;
-      justify-content: flex-start;
-      user-select: none;
+    }
+    .tag-row.has-items { border-color: #4361EE; }
+    .tag-row.dest-row.has-items { border-color: #7C3AED; }
+    .tag-row.empty-row { border-style: dashed; }
+
+    .empty-hint { font-size: 11px; color: rgba(24,24,27,0.35); }
+
+    .tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 7px 3px 5px;
+      border-radius: 5px;
+      font-size: 11px; font-weight: 500;
+      max-width: 200px;
+    }
+    .tag-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tag-badge {
+      font-size: 9px; font-weight: 700;
+      background: rgba(0,0,0,0.12);
+      border-radius: 3px; padding: 1px 4px; flex-shrink: 0;
     }
 
-    .token-item:hover {
-      background: rgba(24, 24, 27, 0.12);
-    }
+    /* tag colors by type */
+    .tag-set      { background: #F5F0FF; color: #6D28D9; border: 1px solid #DDD6FE; }
+    .tag-component{ background: #EEF1FD; color: #3730A3; border: 1px solid #C7D2FE; }
+    .tag-instance { background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
+    .tag-frame    { background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
 
-    .token-item.applying {
-      opacity: 0.6;
-      pointer-events: none;
-    }
+    /* ── DIVIDER ─────────────────────────────────────────── */
+    .divider { height: 1px; background: #E4E4E7; }
 
-    .token-swatch {
-      width: 20px;
-      height: 20px;
-      border-radius: 4px;
-      border: 1px solid #E4E4E7;
+    /* ── RUN BUTTON ──────────────────────────────────────── */
+    .run-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 20px;
+      background: #4361EE; color: white;
+      font-family: "Inter", sans-serif;
+      font-size: 13px; font-weight: 600;
+      border: none; border-radius: 8px;
+      cursor: pointer; transition: background 0.15s; width: 100%;
+    }
+    .run-btn:hover:not(:disabled) { background: #2D41E3; }
+    .run-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+    .run-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* ── STATUS ──────────────────────────────────────────── */
+    .status-area {
+      flex: 1; overflow: hidden;
+      display: flex; flex-direction: column; gap: 8px; min-height: 0;
+    }
+    .status-text {
+      font-size: 11px; color: rgba(24,24,27,0.55);
+      text-align: center; padding: 4px 0;
+    }
+    .status-text.error { color: #DC2626; font-weight: 500; }
+
+    /* ── RESULTS ─────────────────────────────────────────── */
+    .results-box {
+      border: 1.5px solid #E4E4E7; border-radius: 10px;
+      background: white; overflow: hidden;
+      flex: 1; display: flex; flex-direction: column; min-height: 0;
+    }
+    .results-header {
+      padding: 9px 12px; border-bottom: 1px solid #E4E4E7;
+      display: flex; align-items: center; justify-content: space-between;
       flex-shrink: 0;
     }
+    .results-header-title { font-size: 12px; font-weight: 600; }
 
-    .token-name {
-      font-size: 12px;
-      color: #18181B;
-      font-weight: 500;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      flex: 1;
+    .stat-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+    .pill { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; }
+    .pill.ok      { background: #DCFCE7; color: #15803D; }
+    .pill.fail    { background: #FEE2E2; color: #B91C1C; }
+    .pill.skip    { background: #FEF9C3; color: #854D0E; }
+    .pill.neutral { background: #F4F4F5; color: rgba(24,24,27,0.55); }
+
+    /* Tabs */
+    .result-tabs { display: flex; border-bottom: 1px solid #E4E4E7; flex-shrink: 0; }
+    .result-tab {
+      flex: 1; padding: 7px 0;
+      font-size: 11px; font-weight: 500;
+      color: rgba(24,24,27,0.45);
+      cursor: pointer; text-align: center;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s; user-select: none;
+    }
+    .result-tab.active           { color: #4361EE; border-bottom-color: #4361EE; }
+    .result-tab.skip-tab.active  { color: #92400E; border-bottom-color: #D97706; }
+    .result-tab.fail-tab.active  { color: #B91C1C; border-bottom-color: #DC2626; }
+
+    .tab-panel { display: none; flex: 1; overflow-y: auto; padding: 8px; flex-direction: column; gap: 4px; }
+    .tab-panel.active { display: flex; }
+
+    /* Items */
+    .result-item {
+      display: flex; align-items: flex-start; gap: 7px;
+      padding: 7px 9px; border-radius: 7px;
+    }
+    .result-item.ok   { background: #F0FDF4; }
+    .result-item.fail { background: #FEF2F2; }
+    .result-item.skip { background: #FFFBEB; }
+
+    .ri-icon { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; }
+    .ri-body { flex: 1; min-width: 0; }
+    .ri-node { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ri-detail { font-size: 10px; color: rgba(24,24,27,0.5); margin-top: 2px; line-height: 1.4; }
+    .ri-arrow { color: #4361EE; font-weight: 700; margin: 0 3px; }
+    .ri-prop {
+      display: inline-block;
+      background: #EEF1FD; color: #4361EE;
+      font-size: 9px; font-weight: 600;
+      border-radius: 3px; padding: 1px 4px; margin-right: 4px;
+    }
+    .ri-reason { font-size: 10px; color: #92400E; margin-top: 2px; font-style: italic; }
+
+    /* Idle */
+    .idle-hint {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px; color: rgba(24,24,27,0.35);
+      font-size: 11px; text-align: center; padding: 16px; line-height: 1.5;
+    }
+    .idle-hint svg { width: 28px; height: 28px; }
+
+    .tab-empty {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: rgba(24,24,27,0.4);
+      text-align: center; padding: 16px; line-height: 1.5;
     }
 
-    .token-info-small {
-      font-size: 10px;
-      color: rgba(24, 24, 27, 0.6);
+    /* Spinner */
+    .spinner {
+      width: 15px; height: 15px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: white; border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block; flex-shrink: 0;
     }
-
-    .token-check-icon {
-      width: 16px;
-      height: 16px;
-      flex-shrink: 0;
-      color: #2D41E3;
-    }
-
-    .detail-footer {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding-top: 8px;
-      align-items: center;
-    }
-
-    .detail-footer .select-all {
-      margin: 0;
-      /* padding: 6px 12px; */
-      font-size: 12px;
-      /* border: 1px solid #E4E4E7; */
-      /* border-radius: 6px; */
-      /* background: white; */
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .detail-footer .select-all:hover {
-      background: #F4F4F5;
-      border-color: #BFBFBF;
-    }
-
-    .detail-footer .back {
-      width: 100%;
-      align-items: center;
-      justify-content: center;
-      margin: 0;
-      font-size: 12px;
-      color: #4361EE;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.2s;
-    }
-
-    .detail-footer .back:hover {
-      color: #2D41E3;
-      text-decoration: underline;
-    }
-
-    .container {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .empty-state-tokens {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      padding: 12px;
-      text-align: center;
-      color: rgba(24, 24, 27, 0.6);
-      font-size: 12px;
-    }
-
-
-    .nav-icon {
-      width: 20px;
-      height: 20px;
-      stroke: currentColor;
-      flex-shrink: 0;
-    }
-
-    .detail-nav button {
-      width: 32px;
-      height: 32px;
-      padding: 0;
-      border: none;
-      border-radius: 6px;
-      background: transparent;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: rgba(24, 24, 27, 0.72);
-    }
-
-    .detail-nav button:hover:not(:disabled) {
-      background: rgba(112, 112, 123, 0.16);
-    }
-
-    .detail-nav button:disabled {
-      opacity: 0.33;
-      cursor: default;
-    }
-
-    .back-button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 8px 16px;
-      font-size: 14px;
-      font-weight: 500;
-      color: #4361EE;
-      background: transparent;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin: 0;
-    }
-
-    .back-button:hover {
-      color: #2D41E3;
-      background: rgba(112, 112, 123, 0.16);
-    }
-
-    .back-button svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    .select-all-checkbox {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-      color: #18181B;
-      cursor: pointer;
-      transition: all 0.2s;
-      user-select: none;
-      width: 100%;
-    }
-
-    .select-all-checkbox:hover {
-      background: #F4F4F5;
-      border-color: #BFBFBF;
-    }
-
-    .select-all-checkbox input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-      accent-color: #4361EE;
-    }
-
-    /* Loading inline para tokens */
-    .tokens-loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      gap: 12px;
-    }
-
-    .tokens-loading .spinner {
-      width: 24px;
-      height: 24px;
-      border-width: 2px;
-    }
-
-    .tokens-loading .spinner-text {
-      font-size: 11px;
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
-
 <body>
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('colors')">Colors</div>
-    <div class="tab" onclick="switchTab('typography')">Font styles</div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>Variable Substitution</h1>
+    <div class="subtitle">Substitui variáveis por nome — aceita Component Set, Component ou Instance como destino</div>
   </div>
 
-  <div id="app"></div>
-  <div id="top-bar-container"></div>
+  <!-- SELECTION -->
+  <div class="selection-panel">
 
-  <div class="spinner-container" id="spinner">
-    <div class="spinner"></div>
-    <div class="spinner-text">Carregando</div>
+    <div class="panel-label">Destino — Component Set / Component / Instance</div>
+    <div class="tag-row dest-row empty-row" id="targetsRow">
+      <span class="empty-hint" id="targetsEmpty">Selecione componentes ou component sets</span>
+    </div>
+
+    <div class="panel-label">Origem das variáveis — Frames</div>
+    <div class="tag-row empty-row" id="framesRow">
+      <span class="empty-hint" id="framesEmpty">Selecione um ou mais Frames</span>
+    </div>
+
   </div>
 
+  <div class="divider"></div>
+
+  <button class="run-btn" id="runBtn" disabled onclick="run()">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+    Substituir variáveis
+  </button>
+
+  <!-- STATUS + RESULTS -->
+  <div class="status-area">
+
+    <div class="idle-hint" id="idleHint">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 8v4l3 3"/>
+      </svg>
+      Selecione os destinos e os frames de origem, depois clique em "Substituir variáveis"
+    </div>
+
+    <div class="status-text" id="statusMsg" style="display:none"></div>
+
+    <div class="results-box" id="resultsBox" style="display:none">
+      <div class="results-header">
+        <span class="results-header-title">Resultado</span>
+        <div class="stat-pills" id="statPills"></div>
+      </div>
+
+      <div class="result-tabs">
+        <div class="result-tab active"   onclick="switchTab('ok')"   id="tab-ok">✓ Aplicadas</div>
+        <div class="result-tab skip-tab" onclick="switchTab('skip')" id="tab-skip" style="display:none">⚠ Ignoradas</div>
+        <div class="result-tab fail-tab" onclick="switchTab('fail')" id="tab-fail" style="display:none">✗ Falhas</div>
+      </div>
+
+      <div class="tab-panel active" id="panel-ok"></div>
+      <div class="tab-panel"        id="panel-skip"></div>
+      <div class="tab-panel"        id="panel-fail"></div>
+    </div>
+
+  </div>
 
   <script>
+    let hasTargets = false;
+    let hasFrames  = false;
+    let isRunning  = false;
 
-    // ui.ts
+    // ── Selection UI ─────────────────────────────────────────────
 
+    function updateSelectionUI(targets, frames) {
+      const row   = document.getElementById('targetsRow');
+      const empty = document.getElementById('targetsEmpty');
+      hasTargets  = targets.length > 0;
 
-    // 🔥 FUNÇÃO HELPER para extrair peso legível
-    function extractReadableWeight(fontStyle) {
-      const styleLower = fontStyle.toLowerCase();
-      if (styleLower.includes("thin")) return "Thin";
-      if (styleLower.includes("extralight") || styleLower.includes("extra light")) return "ExtraLight";
-      if (styleLower.includes("light") && !styleLower.includes("extralight")) return "Light";
-      if (styleLower.includes("medium")) return "Medium";
-      if (styleLower.includes("semibold") || styleLower.includes("semi bold") || styleLower.includes("semi-bold")) return "SemiBold";
-      if (styleLower.includes("extrabold") || styleLower.includes("extra bold") || styleLower.includes("extra-bold")) return "ExtraBold";
-      if (styleLower.includes("bold") && !styleLower.includes("semibold") && !styleLower.includes("extrabold")) return "Bold";
-      if (styleLower.includes("black") || styleLower.includes("heavy")) return "Black";
-      if (styleLower.includes("regular") || styleLower.includes("normal")) return "Regular";
-      return "Regular";
-    }
+      row.querySelectorAll('.tag').forEach(t => t.remove());
 
-
-    const splash = document.createElement('div');
-
-    splash.style.position = 'fixed';
-    splash.style.top = '0';
-    splash.style.left = '0';
-    splash.style.width = '100vw';
-    splash.style.height = '100vh';
-    splash.style.background = '#2D41E3';
-    splash.style.display = 'flex';
-    splash.style.alignItems = 'center';
-    splash.style.justifyContent = 'center';
-    splash.style.zIndex = '9999';
-
-    // Logo animado
-    splash.innerHTML = `
-<div id="logoWrapper" style="
-  opacity: 0;
-  transform: scale(0.9);
-  animation: logoEnter 0.6s ease forwards;
-">
-  <svg width="242" height="168" viewBox="0 0 242 168" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="242" height="168" fill="#2D41E3"/>
-<g clip-path="url(#clip0_189_2551)">
-<path d="M100.175 64V70.8459H91.0871C87.9607 70.8459 85.4254 73.3259 85.4254 76.3842V83.0306H78.4271V66.1159C78.4282 64.9477 79.397 64 80.5901 64H85.4254V67.2325C87.1062 65.2569 89.6383 64 92.4702 64H100.175Z" fill="white"/>
-<path d="M75.5272 64.038H73.3642V65.3857C72.3717 64.5446 71.0771 64.038 69.6627 64.038C69.2021 64.038 68.7544 64.0918 68.3261 64.1942C66.272 64.6786 64.6559 66.2595 64.1596 68.2677C64.055 68.6867 64 69.1247 64 69.5753V77.4923C64 77.9419 64.055 78.3798 64.1586 78.7988C64.6548 80.8071 66.272 82.388 68.3261 82.8745C68.7544 82.9768 69.2021 83.0306 69.6627 83.0306C71.0781 83.0306 72.3717 82.523 73.3642 81.683V83.0306H77.6892V66.1529C77.6892 64.9836 76.7215 64.037 75.5261 64.037L75.5272 64.038ZM73.3642 77.4923C73.3642 78.2036 72.7849 78.7819 72.062 78.7988C72.0502 78.7988 70.488 78.7988 70.488 78.7988C69.2938 78.7988 68.325 77.8522 68.325 76.6829V70.3826C68.325 69.2144 69.2938 68.2667 70.488 68.2667H72.0275C72.7654 68.2667 73.3642 68.8524 73.3642 69.5742V77.4913V77.4923Z" fill="white"/>
-<path d="M120.626 69.5383V83.0306H113.628V72.9618C113.628 71.7936 112.659 70.8459 111.465 70.8459H110.074C109.869 70.8459 109.67 70.8733 109.482 70.9261C108.712 71.1403 108.117 71.7608 107.956 72.5344C107.928 72.6716 107.911 72.8151 107.911 72.9607V83.0296H100.913V64H107.911V66.6109C107.911 66.6109 107.909 66.614 107.908 66.6161H107.911V66.6109C108.912 65.0427 110.69 64 112.718 64H114.965C116.994 64 118.775 65.0458 119.774 66.6151C120.315 67.4636 120.626 68.464 120.626 69.5373V69.5383Z" fill="white"/>
-<path d="M177.937 64.019V80.8957C177.937 82.0639 176.969 83.0116 175.774 83.0116H170.939V80.4007C170.939 80.4007 170.941 80.3976 170.942 80.3955H170.939V80.4007C169.939 81.969 168.16 83.0116 166.132 83.0116H163.885C161.856 83.0116 160.075 81.9658 159.076 80.3965C158.535 79.548 158.224 78.5476 158.224 77.4743V64.019H165.222V74.0498C165.222 75.2181 166.191 76.1657 167.385 76.1657H168.776C168.981 76.1657 169.18 76.1383 169.368 76.0855C170.138 75.8713 170.733 75.2508 170.894 74.4772C170.922 74.34 170.939 74.1965 170.939 74.0509V64.019H177.937Z" fill="white"/>
-<path d="M157.499 72.6916C157.499 72.6631 157.496 72.6357 157.495 72.6083C157.492 72.5323 157.488 72.4584 157.482 72.3835C157.48 72.3603 157.479 72.3381 157.478 72.3149C157.471 72.222 157.462 72.1291 157.452 72.0363C157.45 72.0131 157.447 71.9898 157.444 71.9656C157.435 71.8927 157.427 71.821 157.417 71.7482C157.412 71.7207 157.409 71.6943 157.405 71.6669C157.39 71.5751 157.376 71.4833 157.358 71.3915C157.358 71.3872 157.358 71.382 157.356 71.3777C157.34 71.2902 157.322 71.2026 157.303 71.115C157.298 71.0907 157.291 71.0654 157.287 71.04C157.27 70.9641 157.252 70.8881 157.233 70.8121C157.229 70.7963 157.225 70.7804 157.22 70.7646C157.197 70.6738 157.172 70.5831 157.145 70.4923C157.139 70.4765 157.135 70.4617 157.13 70.4459C157.107 70.3689 157.082 70.2908 157.056 70.2148C157.05 70.1979 157.044 70.18 157.039 70.1631C156.978 69.9794 156.91 69.8 156.836 69.6227C156.831 69.6111 156.825 69.5995 156.821 69.5879C156.369 68.5083 155.71 67.5364 154.89 66.7164C154.89 66.7164 154.888 66.7143 154.887 66.7122C154.689 66.5159 154.483 66.328 154.269 66.1486C154.263 66.1444 154.258 66.1402 154.253 66.136C154.186 66.079 154.116 66.0241 154.047 65.9682C154.044 65.9682 154.042 65.965 154.04 65.9629C153.894 65.85 153.744 65.7402 153.592 65.6357C153.585 65.6305 153.576 65.6252 153.568 65.6199C153.502 65.5745 153.434 65.5292 153.366 65.4848C153.355 65.4774 153.345 65.4711 153.334 65.4648C153.181 65.3666 153.025 65.2738 152.865 65.1841C152.855 65.1798 152.848 65.1746 152.839 65.1693C152.77 65.1313 152.7 65.0944 152.631 65.0585C152.615 65.05 152.599 65.0416 152.582 65.0332C152.512 64.9973 152.441 64.9614 152.37 64.9276C152.36 64.9223 152.352 64.9181 152.343 64.9139C152.26 64.8738 152.176 64.8369 152.092 64.7989C152.085 64.7957 152.079 64.7936 152.072 64.7904C151.998 64.7577 151.924 64.7271 151.849 64.6965C151.828 64.6881 151.808 64.6807 151.787 64.6722C151.721 64.6458 151.656 64.6205 151.589 64.5962C151.57 64.5889 151.551 64.5815 151.533 64.5762C151.364 64.515 151.195 64.4591 151.022 64.4073C151.001 64.401 150.977 64.3947 150.956 64.3883C150.89 64.3704 150.825 64.3514 150.759 64.3345C150.734 64.3271 150.711 64.3208 150.685 64.3155C150.609 64.2965 150.535 64.2765 150.458 64.2596C150.446 64.2575 150.436 64.2543 150.423 64.2512C150.335 64.2311 150.248 64.2121 150.158 64.1952C150.137 64.191 150.113 64.1868 150.091 64.1826C150.024 64.1699 149.957 64.1583 149.889 64.1467C149.862 64.1414 149.834 64.1372 149.805 64.1319C149.738 64.1214 149.67 64.1119 149.602 64.1024C149.58 64.0992 149.556 64.096 149.534 64.0929C149.444 64.0813 149.353 64.0718 149.263 64.0623C149.247 64.0601 149.228 64.0591 149.212 64.058C149.138 64.0506 149.064 64.0443 148.99 64.0401C148.96 64.038 148.931 64.0369 148.901 64.0348C148.836 64.0306 148.769 64.0274 148.702 64.0243C148.675 64.0243 148.647 64.0222 148.619 64.0211C148.527 64.019 148.434 64.0169 148.342 64.0169H123.508C122.314 64.0169 121.345 64.9646 121.345 66.1328V80.8946C121.345 82.0629 122.314 83.0106 123.508 83.0106H148.342C148.434 83.0106 148.527 83.0085 148.619 83.0063C148.647 83.0063 148.675 83.0042 148.703 83.0032C148.769 83 148.836 82.9968 148.901 82.9926C148.931 82.9905 148.961 82.9895 148.99 82.9873C149.063 82.9821 149.136 82.9757 149.208 82.9705C149.226 82.9684 149.246 82.9673 149.264 82.9652C149.353 82.9557 149.443 82.9462 149.531 82.9346C149.556 82.9314 149.581 82.9272 149.608 82.924C149.673 82.9145 149.738 82.9061 149.802 82.8955C149.834 82.8913 149.864 82.886 149.894 82.8808C149.958 82.8692 150.02 82.8586 150.084 82.847C150.11 82.8417 150.136 82.8364 150.161 82.8312C150.248 82.8143 150.333 82.7963 150.418 82.7773C150.438 82.7731 150.458 82.7678 150.478 82.7626C150.544 82.7467 150.611 82.7309 150.677 82.714C150.708 82.7066 150.739 82.6982 150.769 82.6897C150.826 82.6739 150.883 82.6591 150.94 82.6433C150.971 82.6338 151 82.6264 151.03 82.6169C151.102 82.5958 151.172 82.5726 151.245 82.5494C151.26 82.5452 151.274 82.5399 151.29 82.5346C151.368 82.5093 151.445 82.4818 151.523 82.4544C151.551 82.4439 151.58 82.4333 151.608 82.4228C151.662 82.4027 151.717 82.3805 151.771 82.3594C151.801 82.3478 151.83 82.3362 151.861 82.3236C151.919 82.3003 151.976 82.2761 152.032 82.2507C152.055 82.2402 152.079 82.2317 152.101 82.2212C152.179 82.1874 152.254 82.1526 152.331 82.1167C152.355 82.104 152.378 82.0935 152.403 82.0808C152.457 82.0544 152.512 82.0281 152.565 82.0006C152.594 81.9858 152.622 81.9721 152.65 81.9574C152.702 81.9299 152.755 81.9014 152.807 81.8729C152.831 81.8592 152.855 81.8476 152.88 81.8328C152.953 81.7917 153.026 81.7505 153.099 81.7072C153.114 81.6977 153.127 81.6904 153.142 81.6809C153.202 81.645 153.261 81.608 153.32 81.5711C153.344 81.5553 153.367 81.5405 153.391 81.5257C153.442 81.493 153.494 81.4592 153.545 81.4244C153.566 81.4086 153.589 81.3949 153.61 81.379C153.677 81.3337 153.744 81.2862 153.81 81.2387C153.813 81.2355 153.817 81.2334 153.82 81.2313C153.891 81.1806 153.96 81.1268 154.029 81.073C154.045 81.0603 154.061 81.0487 154.077 81.035C154.13 80.9928 154.184 80.9506 154.236 80.9063C154.253 80.8925 154.271 80.8788 154.287 80.864C154.347 80.8144 154.407 80.7627 154.465 80.7121C154.471 80.7057 154.478 80.7005 154.482 80.6962C154.551 80.6361 154.618 80.5749 154.685 80.5126C154.689 80.5084 154.694 80.5042 154.698 80.5C154.758 80.443 154.818 80.386 154.876 80.3269C154.887 80.3163 154.896 80.3068 154.906 80.2973C154.964 80.2382 155.023 80.1781 155.079 80.1179C155.083 80.1148 155.086 80.1105 155.09 80.1074C155.217 79.9712 155.34 79.833 155.459 79.6905C155.459 79.6884 155.461 79.6863 155.463 79.6842C156.022 79.0098 156.481 78.2542 156.823 77.4395C156.828 77.4279 156.833 77.4174 156.837 77.4047C156.912 77.2274 156.979 77.0469 157.041 76.8633C157.047 76.8475 157.052 76.8306 157.057 76.8148C157.083 76.7367 157.108 76.6575 157.133 76.5784C157.137 76.5636 157.141 76.5499 157.146 76.5351C157.173 76.4444 157.199 76.3525 157.223 76.2597C157.227 76.2449 157.23 76.2312 157.234 76.2175C157.254 76.1394 157.273 76.0613 157.29 75.9832C157.296 75.96 157.301 75.9378 157.305 75.9135C157.325 75.8217 157.345 75.7299 157.362 75.637C157.378 75.5442 157.394 75.4502 157.408 75.3563C157.412 75.332 157.416 75.3067 157.419 75.2803C157.431 75.2054 157.439 75.1294 157.448 75.0534C157.45 75.0334 157.453 75.0112 157.455 74.9901C157.466 74.8972 157.474 74.8023 157.481 74.7083C157.481 74.6883 157.483 74.6661 157.486 74.6461C157.491 74.5701 157.495 74.492 157.499 74.416C157.499 74.3886 157.501 74.3622 157.502 74.3358C157.505 74.2398 157.507 74.1427 157.507 74.0456V72.9723C157.507 72.8763 157.505 72.7813 157.502 72.6863L157.499 72.6916ZM139.151 73.7881C139.151 73.7438 139.151 73.7005 139.149 73.6572C139.149 73.7237 139.145 73.7902 139.139 73.8556C139.136 73.9221 139.13 73.9886 139.123 74.054C139.116 74.1195 139.109 74.1828 139.1 74.2472C139.1 74.2514 139.1 74.2567 139.098 74.2619C139.093 74.3094 139.085 74.3569 139.078 74.4034C139.074 74.4255 139.07 74.4487 139.066 74.4709C139.066 74.4793 139.064 74.4867 139.061 74.4952C139.053 74.5416 139.044 74.588 139.034 74.6334C139.02 74.6967 139.008 74.7601 138.99 74.8223C138.975 74.8825 138.96 74.9426 138.944 75.0028C138.941 75.0123 138.938 75.0207 138.935 75.0313C138.92 75.0851 138.903 75.1389 138.886 75.1927C138.866 75.2539 138.846 75.3141 138.823 75.3732C138.807 75.4207 138.789 75.4682 138.769 75.5146C138.716 75.6518 138.657 75.7848 138.593 75.9156C138.568 75.9663 138.543 76.0169 138.516 76.0665C138.457 76.1774 138.394 76.2871 138.327 76.3937C138.294 76.4465 138.26 76.5003 138.224 76.552C138.193 76.5984 138.162 76.6449 138.128 76.6892C138.087 76.7462 138.046 76.8021 138.002 76.858C137.964 76.9066 137.925 76.9562 137.887 77.0026C137.887 77.0026 137.887 77.0026 137.884 77.0047C137.846 77.0522 137.806 77.0997 137.763 77.1461C137.722 77.1926 137.679 77.2401 137.635 77.2844C137.592 77.3298 137.549 77.3751 137.503 77.4195C137.457 77.4638 137.412 77.5071 137.366 77.5493C137.277 77.6316 137.185 77.7118 137.09 77.7867C137.085 77.7909 137.081 77.7952 137.075 77.7983C136.781 78.0347 136.463 78.2416 136.123 78.4167C136.058 78.4516 135.992 78.4832 135.925 78.5149C135.795 78.5867 135.656 78.6458 135.51 78.688C135.51 78.688 135.508 78.688 135.507 78.688C134.88 78.9222 134.199 79.051 133.488 79.051H127.009C126.271 79.051 125.672 78.4653 125.672 77.7435V69.284C125.672 68.5621 126.271 67.9764 127.009 67.9764H133.488C134.199 67.9764 134.88 68.1052 135.507 68.3395C135.507 68.3395 135.509 68.3395 135.51 68.3395C135.655 68.3827 135.795 68.4418 135.925 68.5125C135.992 68.5442 136.058 68.5759 136.123 68.6107C136.406 68.7553 136.676 68.9252 136.929 69.1141C136.978 69.151 137.028 69.189 137.075 69.227C137.081 69.2312 137.085 69.2354 137.09 69.2397C137.185 69.3156 137.277 69.3948 137.366 69.4771C137.412 69.5193 137.457 69.5626 137.503 69.6069C137.549 69.6512 137.592 69.6956 137.635 69.742C137.679 69.7874 137.722 69.8338 137.763 69.8802C137.806 69.9267 137.846 69.9742 137.884 70.0217C137.884 70.0217 137.887 70.0217 137.887 70.0238C137.927 70.0702 137.964 70.1198 138.002 70.1683C138.039 70.2137 138.073 70.2602 138.107 70.3055C138.124 70.3298 138.141 70.353 138.157 70.3784C138.183 70.4142 138.207 70.4501 138.233 70.486C138.264 70.5335 138.297 70.5831 138.327 70.6316C138.329 70.6348 138.33 70.6369 138.332 70.6401C138.363 70.6907 138.395 70.7424 138.424 70.7942C138.454 70.8459 138.483 70.8997 138.511 70.9525C138.563 71.0485 138.612 71.1466 138.656 71.2448C138.672 71.2775 138.686 71.3113 138.701 71.344C138.725 71.3989 138.749 71.4548 138.77 71.5118C138.79 71.5582 138.808 71.6057 138.824 71.6532C138.847 71.7123 138.867 71.7724 138.887 71.8336C138.904 71.8864 138.921 71.9402 138.936 71.9951C138.938 72.0036 138.942 72.0109 138.944 72.0194C138.96 72.0806 138.977 72.1418 138.991 72.203C139.008 72.2653 139.022 72.3286 139.036 72.3919C139.047 72.4457 139.057 72.4996 139.067 72.5555C139.071 72.5777 139.074 72.5998 139.078 72.6209C139.087 72.6695 139.094 72.7201 139.1 72.7697C139.1 72.7729 139.1 72.7761 139.1 72.7792C139.11 72.8425 139.116 72.908 139.123 72.9723C139.13 73.0378 139.136 73.1043 139.139 73.1707C139.145 73.2372 139.148 73.3037 139.149 73.3691C139.151 73.3259 139.151 73.2826 139.151 73.2383V73.7849V73.7881Z" fill="white"/>
-<path d="M98.0132 71.9307H95.8501V73.2784C94.8576 72.4383 93.563 71.9307 92.1487 71.9307C91.688 71.9307 91.2403 71.9845 90.812 72.0869C88.759 72.5713 87.1429 74.1522 86.6456 76.1615C86.541 76.5805 86.4859 77.0184 86.4859 77.4691V77.4923C86.4859 77.9418 86.541 78.3798 86.6445 78.7988C87.1408 80.807 88.7579 82.3879 90.812 82.8744C91.2403 82.9768 91.688 83.0306 92.1487 83.0306C93.5641 83.0306 94.8576 82.523 95.8501 81.683V83.0306H100.175V74.0466C100.175 72.8773 99.2074 71.9307 98.0121 71.9307H98.0132ZM95.8501 78.2985C95.8501 79.0098 95.2708 79.5881 94.548 79.605C94.5361 79.605 92.974 79.605 92.974 79.605C91.7797 79.605 90.8109 78.6584 90.8109 77.4891V77.4838C90.8109 77.4838 90.8109 77.4817 90.8109 77.4807C90.8109 77.4796 90.8109 77.4786 90.8109 77.4775V77.4722C90.8109 76.304 91.7797 75.3563 92.974 75.3563H94.5135C95.2514 75.3563 95.8501 75.942 95.8501 76.6638V78.2975V78.2985Z" fill="white"/>
-</g>
-<path d="M78.4839 87.264V91.008H73.9719V104.184H69.2679V91.008H64.8039V87.264H78.4839Z" fill="white"/>
-<path d="M88.3363 104.352C86.7523 104.352 85.2963 103.984 83.9683 103.248C82.6403 102.496 81.5843 101.464 80.8003 100.152C80.0323 98.824 79.6483 97.328 79.6483 95.664C79.6483 94 80.0323 92.512 80.8003 91.2C81.5843 89.872 82.6403 88.84 83.9683 88.104C85.2963 87.368 86.7523 87 88.3363 87C89.9363 87 91.3923 87.368 92.7043 88.104C94.0323 88.84 95.0803 89.872 95.8483 91.2C96.6163 92.512 97.0003 94 97.0003 95.664C97.0003 97.328 96.6163 98.824 95.8483 100.152C95.0803 101.464 94.0323 102.496 92.7043 103.248C91.3763 103.984 89.9203 104.352 88.3363 104.352ZM88.3363 99.984C89.5363 99.984 90.4803 99.592 91.1683 98.808C91.8723 98.024 92.2243 96.976 92.2243 95.664C92.2243 94.32 91.8723 93.264 91.1683 92.496C90.4803 91.712 89.5363 91.32 88.3363 91.32C87.1203 91.32 86.1683 91.712 85.4803 92.496C84.7923 93.264 84.4483 94.32 84.4483 95.664C84.4483 96.992 84.7923 98.048 85.4803 98.832C86.1683 99.6 87.1203 99.984 88.3363 99.984Z" fill="white"/>
-<path d="M121.595 88.104C120.283 87.368 118.827 87 117.227 87V91.32C118.427 91.32 119.371 91.712 120.059 92.496C120.763 93.264 121.115 94.32 121.115 95.664C121.115 96.976 120.763 98.024 120.059 98.808C119.371 99.592 118.427 99.984 117.227 99.984V104.352C118.811 104.352 120.267 103.984 121.595 103.248C122.923 102.496 123.971 101.464 124.739 100.152C125.507 98.824 125.891 97.328 125.891 95.664C125.891 94 125.507 92.512 124.739 91.2C123.971 89.872 122.923 88.84 121.595 88.104Z" fill="white"/>
-<path d="M107.227 87C105.643 87 104.187 87.368 102.859 88.104C101.531 88.84 100.475 89.872 99.6909 91.2C98.9229 92.512 98.5389 94 98.5389 95.664C98.5389 97.328 98.9229 98.824 99.6909 100.152C100.475 101.464 101.531 102.496 102.859 103.248C104.187 103.984 105.643 104.352 107.227 104.352L107.227 99.984C106.011 99.984 105.059 99.6 104.371 98.832C103.683 98.048 103.339 96.992 103.339 95.664C103.339 94.32 103.683 93.264 104.371 92.496C105.059 91.712 106.011 91.32 107.227 91.32L107.227 87Z" fill="white"/>
-<path d="M117.227 99.984V104.352H107.227L107.227 99.984H117.227Z" fill="white"/>
-<path d="M117.227 87V91.32H107.227L107.227 87H117.227Z" fill="white"/>
-<path d="M132.71 100.584H137.966V104.184H128.006V87.264H132.71V100.584Z" fill="white"/>
-<path d="M149.803 104.184L144.499 96.768V104.184H139.795V87.264H144.499V94.56L149.755 87.264H155.179L148.963 95.472L155.491 104.184H149.803Z" fill="white"/>
-<path d="M161.913 87.264V104.184H157.209V87.264H161.913Z" fill="white"/>
-<path d="M177.335 87.264V91.008H172.823V104.184H168.119V91.008H163.655V87.264H177.335Z" fill="white"/>
-<defs>
-<clipPath id="clip0_189_2551">
-<rect width="114" height="19" fill="white" transform="translate(64 64)"/>
-</clipPath>
-</defs>
-</svg>
-
-</div>
-
-<style>
-@keyframes logoEnter {
-  to {
-    opacity: 1;
-    transform: scale(1.5);
-  }
-}
-</style>
-`;
-
-    document.body.appendChild(splash);
-
-    // Remove com fade-out suave
-    setTimeout(() => {
-      splash.style.transition = 'opacity 0.5s ease';
-      splash.style.opacity = '0';
-
-      setTimeout(() => {
-        splash.remove();
-      }, 400);
-    }, 1500);
-
-
-
-
-    const app = document.getElementById("app");
-    const topBarContainer = document.getElementById("top-bar-container");
-    const spinner = document.getElementById("spinner");
-
-    let viewMode = "list";
-    let currentGroup = null;
-    let currentIndex = 0;
-    let showHidden = false;
-    let currentTab = "colors";
-    let lastColorGroups = [];
-    let lastTypographyGroups = [];
-    let appliedTokens = [];
-    let isSelectAllMode = false;
-    let isLoadingTokens = false;
-    let currentView = "list";
-
-    let loadingTimeout = null;
-
-    // 🔥 Rastreia tokens aplicados por nodeId
-    let appliedTokensByNode = new Map(); // Map<nodeId, { styleName, styleId, hex? }>
-
-    // 🔥 Rastreia o último token aplicado (para mostrar o check)
-    let lastAppliedStyleId = null;
-
-    function applyTypographyToken(tokenId, nodeIds) {
-      parent.postMessage(
-        {
-          pluginMessage: {
-            type: "apply-typography-token",
-            styleId: tokenId,
-            nodeIds: nodeIds
-          }
-        },
-        "*"
-      );
-    }
-
-
-    function selectNodes(nodeIds) {
-      parent.postMessage(
-        {
-          pluginMessage: {
-            type: "select-multiple-nodes",
-            nodeIds: nodeIds
-          }
-        },
-        "*"
-      );
-    }
-
-    // 🔥 CORRIGIDO: Agora passa isStroke corretamente
-    function applyTokenToNodes(tokenId, nodeIds, isStroke) {
-      parent.postMessage(
-        {
-          pluginMessage: {
-            type: "apply-token-multiple",
-            styleId: tokenId,
-            nodeIds: nodeIds,
-            isStroke: isStroke
-          }
-        },
-        "*"
-      );
-    }
-
-    // 🔥 NOVA FUNÇÃO: Remove token de cor
-    function removeColorToken(nodeIds, isStroke) {
-      parent.postMessage({
-        pluginMessage: {
-          type: "remove-color-token",
-          nodeIds,
-          isStroke
-        }
-      }, "*");
-    }
-
-    // 🔥 NOVA FUNÇÃO: Remove token de texto
-    function removeTextToken(nodeIds) {
-      parent.postMessage({
-        pluginMessage: {
-          type: "remove-text-token",
-          nodeIds
-        }
-      }, "*");
-    }
-
-
-    // Funções para controlar o loading
-    function showLoading() {
-      console.log("Mostrando spinner");
-      app.innerHTML = "";
-      topBarContainer.innerHTML = "";
-
-      // Aguarda 300ms antes de realmente mostrar o spinner
-      loadingTimeout = setTimeout(() => {
-        spinner.classList.add("show");
-      }, 300);
-    }
-
-    function hideLoading() {
-      console.log("Escondendo spinner");
-
-      // Limpa o timeout se o carregamento terminar antes de 300ms
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout);
-        loadingTimeout = null;
-      }
-
-      spinner.classList.remove("show");
-    }
-
-    function switchTab(tab) {
-
-      // 🔥 Se estiver em detalhe, executa o mesmo fluxo do botão voltar
-      if (viewMode === "detail") {
-        back(); // isso já envia back-to-list para o backend
-      }
-
-      currentTab = tab;
-
-      // Atualiza visual das tabs
-      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      const tabs = document.querySelectorAll(".tab");
-      if (tab === "colors") {
-        tabs[0].classList.add("active");
+      if (hasTargets) {
+        row.className = 'tag-row dest-row has-items';
+        empty.style.display = 'none';
+        targets.forEach(t => {
+          const tag = document.createElement('div');
+          const cls = t.type === 'COMPONENT_SET' ? 'tag-set'
+                    : t.type === 'COMPONENT'     ? 'tag-component'
+                    : 'tag-instance';
+          const badge = t.type === 'COMPONENT_SET'
+            ? `<span class="tag-badge">${t.variantCount}v</span>`
+            : '';
+          const label = t.type === 'INSTANCE' && t.mainName
+            ? `${esc(t.name)} <span style="opacity:.6;font-size:10px">→ ${esc(t.mainName)}</span>`
+            : esc(t.name);
+          tag.className = `tag ${cls}`;
+          tag.innerHTML = `<span class="tag-name">${label}</span>${badge}`;
+          row.appendChild(tag);
+        });
       } else {
-        tabs[1].classList.add("active");
+        row.className = 'tag-row dest-row empty-row';
+        empty.style.display = '';
       }
 
-      // Mostra loading
-      showLoading();
+      const fRow   = document.getElementById('framesRow');
+      const fEmpty = document.getElementById('framesEmpty');
+      hasFrames = frames.length > 0;
+      fRow.querySelectorAll('.tag').forEach(t => t.remove());
 
-      // Notifica o plugin
-      parent.postMessage({ pluginMessage: { type: "switch-tab", tab } }, "*");
+      if (hasFrames) {
+        fRow.className = 'tag-row has-items';
+        fEmpty.style.display = 'none';
+        frames.forEach(f => {
+          const tag = document.createElement('div');
+          tag.className = 'tag tag-frame';
+          tag.innerHTML = `<span class="tag-name" title="${esc(f.name)}">${esc(f.name)}</span>`;
+          fRow.appendChild(tag);
+        });
+      } else {
+        fRow.className = 'tag-row empty-row';
+        fEmpty.style.display = '';
+      }
+
+      updateRunBtn();
     }
 
-    function renderTopBar(show) {
-      topBarContainer.innerHTML = "";
-      // Não mostra top bar se não deve mostrar ou não está em modo lista
-      if (!show || viewMode !== "list") return;
+    function updateRunBtn() {
+      document.getElementById('runBtn').disabled = !hasTargets || !hasFrames || isRunning;
+    }
 
-      const div = document.createElement("div");
-      div.className = "top-bar";
-      div.innerHTML = `
-    <div class="switch-container">
-      <label class="switch">
-        <input type="checkbox" ${showHidden ? "checked" : ""}/>
-        <span class="slider"></span>
-      </label>
-      <span class="switch-label">Exibir elementos ocultos</span>
-    </div>
-  `;
+    // ── Run ──────────────────────────────────────────────────────
 
-      div.querySelector("input").addEventListener("change", e => {
-        showHidden = e.target.checked;
-        // Mostra loading imediatamente
-        showLoading();
-        parent.postMessage({ pluginMessage: { type: "toggle-hidden", value: showHidden } }, "*");
+    function setRunning(running) {
+      isRunning = running;
+      document.getElementById('runBtn').innerHTML = running
+        ? `<div class="spinner"></div> Processando...`
+        : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg> Substituir variáveis`;
+      updateRunBtn();
+    }
+
+    function showStatus(msg, type) {
+      const el = document.getElementById('statusMsg');
+      el.style.display = 'block';
+      el.textContent = msg;
+      el.className = `status-text ${type || ''}`;
+    }
+
+    function run() {
+      if (isRunning) return;
+      setRunning(true);
+      document.getElementById('idleHint').style.display = 'none';
+      document.getElementById('resultsBox').style.display = 'none';
+      showStatus('Iniciando...', '');
+      parent.postMessage({ pluginMessage: { type: 'run' } }, '*');
+    }
+
+    // ── Tabs ─────────────────────────────────────────────────────
+
+    function switchTab(name) {
+      ['ok','skip','fail'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('active', t === name);
+        document.getElementById(`panel-${t}`).classList.toggle('active', t === name);
       });
-
-      topBarContainer.appendChild(div);
     }
 
-    function paintToCss(paint, node) {
-      if (!paint) return "#000";
+    // ── Results ──────────────────────────────────────────────────
 
-      if (paint.type === "SOLID") {
-        const r = Math.round(paint.color.r * 255);
-        const g = Math.round(paint.color.g * 255);
-        const b = Math.round(paint.color.b * 255);
-        let a = paint.opacity ?? 1;
-        if (node?.opacity) a *= node.opacity;
-        return `rgba(${r},${g},${b},${a})`;
-      }
+    function showResults(data) {
+      document.getElementById('idleHint').style.display = 'none';
+      document.getElementById('statusMsg').style.display = 'none';
 
-      if (paint.type.startsWith("GRADIENT")) {
-        const stops = paint.gradientStops.map(s => {
-          const r = Math.round(s.color.r * 255);
-          const g = Math.round(s.color.g * 255);
-          const b = Math.round(s.color.b * 255);
-          return `rgba(${r},${g},${b},${s.color.a}) ${s.position * 100}%`;
-        }).join(", ");
-        return `linear-gradient(90deg, ${stops})`;
-      }
+      const box = document.getElementById('resultsBox');
+      box.style.display = 'flex';
 
-      return "#000";
+      document.getElementById('statPills').innerHTML = `
+        <span class="pill ok">✓ ${data.successCount}</span>
+        ${data.skippedInstanceCount > 0 ? `<span class="pill skip">⚠ ${data.skippedInstanceCount}</span>` : ''}
+        ${data.failedCount > 0          ? `<span class="pill fail">✗ ${data.failedCount}</span>`          : ''}
+        <span class="pill neutral">${data.total} total</span>`;
+
+      const tabSkip = document.getElementById('tab-skip');
+      const tabFail = document.getElementById('tab-fail');
+      tabSkip.style.display = data.skippedInstanceCount > 0 ? '' : 'none';
+      tabFail.style.display = data.failedCount          > 0 ? '' : 'none';
+
+      document.getElementById('tab-ok').textContent   = `✓ Aplicadas (${data.successCount})`;
+      if (data.skippedInstanceCount > 0) tabSkip.textContent = `⚠ Ignoradas (${data.skippedInstanceCount})`;
+      if (data.failedCount > 0)          tabFail.textContent = `✗ Falhas (${data.failedCount})`;
+
+      renderPanel('ok',   data.results.filter(r => r.status === 'success'),          renderOk);
+      renderPanel('skip', data.results.filter(r => r.status === 'skipped_instance'), renderSkip);
+      renderPanel('fail', data.results.filter(r => r.status === 'failed'),            renderFail);
     }
 
-    // Converte o estilo do Figma (ex: "Bold Italic") para propriedades CSS
-    function parseFigmaFontStyle(fontStyle, fontWeight) {
-      let cssWeight = typeof fontWeight === "number" ? fontWeight : 400;
-      let cssStyle = "normal";
-
-      const styleLower = fontStyle.toLowerCase();
-
-      // Detecta italic/oblique
-      if (styleLower.includes("italic") || styleLower.includes("oblique")) {
-        cssStyle = "italic";
-      }
-
-      // Mapeia estilos comuns para pesos
-      if (styleLower.includes("thin")) cssWeight = 100;
-      else if (styleLower.includes("extralight") || styleLower.includes("extra light")) cssWeight = 200;
-      else if (styleLower.includes("light")) cssWeight = 300;
-      else if (styleLower.includes("regular") || styleLower.includes("normal")) cssWeight = 400;
-      else if (styleLower.includes("medium")) cssWeight = 500;
-      else if (styleLower.includes("semibold") || styleLower.includes("semi bold")) cssWeight = 600;
-      else if (styleLower.includes("bold")) cssWeight = 700;
-      else if (styleLower.includes("extrabold") || styleLower.includes("extra bold")) cssWeight = 800;
-      else if (styleLower.includes("black") || styleLower.includes("heavy")) cssWeight = 900;
-
-      return { weight: cssWeight, style: cssStyle };
+    function renderPanel(name, items, renderer) {
+      const panel = document.getElementById(`panel-${name}`);
+      panel.innerHTML = items.length === 0
+        ? `<div class="tab-empty">${tabEmptyMsg(name)}</div>`
+        : items.map(renderer).join('');
     }
 
-    function selectCurrentNode() {
-      if (!currentGroup) return;
-      const entry = currentTab === "colors"
-        ? currentGroup.nodePaints[currentIndex]
-        : currentGroup.nodeStyles[currentIndex];
-      parent.postMessage({
-        pluginMessage: { type: "select-node", nodeId: entry.nodeId }
-      }, "*");
+    function tabEmptyMsg(tab) {
+      if (tab === 'ok')   return 'Nenhuma substituição foi aplicada.<br>As variáveis já podem estar corretas ou sem nomes em comum.';
+      if (tab === 'skip') return 'Nenhuma instância foi ignorada.';
+      return 'Nenhuma falha registrada.';
     }
 
-    function toggleSelectAll(checked) {
-      isSelectAllMode = checked;
+    const iconOk   = `<svg class="ri-icon" viewBox="0 0 20 20" fill="#16A34A"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>`;
+    const iconWarn = `<svg class="ri-icon" viewBox="0 0 20 20" fill="#D97706"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`;
+    const iconFail = `<svg class="ri-icon" viewBox="0 0 20 20" fill="#DC2626"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>`;
 
-      const items =
-        currentTab === "colors"
-          ? currentGroup.nodePaints
-          : currentGroup.nodeStyles;
-
-      const nodeIds = items.map(n => n.nodeId);
-
-      if (checked) {
-        // Apenas seleciona os nós
-        selectNodes(nodeIds);
-      } else {
-        // Volta para navegação individual
-        currentIndex = 0;
-        selectCurrentNode();
-      }
-
-      if (currentTab === "colors") {
-        renderColorDetail();
-      } else {
-        renderTypographyDetail();
-      }
+    function propLabel(r) {
+      return r.paintSubProp
+        ? `${r.property}[${r.paintIndex ?? 0}].${r.paintSubProp}`
+        : r.property;
     }
 
+    function renderOk(r) {
+      return `<div class="result-item ok">
+        ${iconOk}
+        <div class="ri-body">
+          <div class="ri-node">${esc(r.nodeName)}</div>
+          <div class="ri-detail">
+            <span class="ri-prop">${esc(propLabel(r))}</span>
+            ${esc(short(r.oldVariableName))}
+            <span class="ri-arrow">→</span>
+            ${esc(short(r.newVariableName ?? ''))}
+          </div>
+        </div>
+      </div>`;
+    }
 
+    function renderSkip(r) {
+      return `<div class="result-item skip">
+        ${iconWarn}
+        <div class="ri-body">
+          <div class="ri-node">${esc(r.nodeName)}</div>
+          <div class="ri-detail">
+            <span class="ri-prop">${esc(propLabel(r))}</span>
+            ${esc(short(r.oldVariableName))}
+            <span class="ri-arrow">→</span>
+            ${esc(short(r.newVariableName ?? ''))}
+          </div>
+          <div class="ri-reason">${esc(r.reason ?? '')}</div>
+        </div>
+      </div>`;
+    }
 
+    function renderFail(r) {
+      return `<div class="result-item fail">
+        ${iconFail}
+        <div class="ri-body">
+          <div class="ri-node">${esc(r.nodeName)}</div>
+          <div class="ri-detail">
+            <span class="ri-prop">${esc(propLabel(r))}</span>
+            ${esc(short(r.oldVariableName))}
+          </div>
+        </div>
+      </div>`;
+    }
 
+    function short(name) {
+      const parts = String(name).split('/');
+      return parts.length > 2 ? `…/${parts.slice(-2).join('/')}` : name;
+    }
 
-    onmessage = e => {
+    function esc(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Messages ─────────────────────────────────────────────────
+
+    onmessage = (e) => {
       const msg = e.data.pluginMessage;
-      console.log("Mensagem recebida:", msg.type);
-
-      if (msg.type === "frame-changed") {
-        if (currentView === "detail") {
-          showListView(); // ou a função que você usa para voltar à lista
-        }
-
-        currentView = "list";
-      }
-
-      // Token aplicado com sucesso
-      if (msg.type === "token-applied-success") {
-        console.log("Token aplicado com sucesso!", msg);
-
-        document.querySelectorAll('.token-item.applying').forEach(el => {
-          el.classList.remove('applying');
-        });
-
-        // 🔥 Salva o último token aplicado
-        lastAppliedStyleId = msg.styleId;
-
-        // 🔥 Salva os tokens aplicados por nodeId
-        const items = currentTab === "colors" ? currentGroup.nodePaints : currentGroup.nodeStyles;
-
-        if (isSelectAllMode) {
-          // Aplica para todos os nodes
-          items.forEach(item => {
-            const tokenData = {
-              styleName: msg.styleName,
-              styleId: msg.styleId
-            };
-
-            if (currentTab === "colors") {
-              const token = appliedTokens.find(t => t.styleId === msg.styleId);
-              if (token && token.hex) {
-                tokenData.hex = token.hex;
-              }
-            } else {
-              // 🔥 Para tipografia, salva também fontStyle e fontSize
-              const token = appliedTokens.find(t => t.styleId === msg.styleId);
-              if (token) {
-                tokenData.fontStyle = token.fontStyle;
-                tokenData.fontSize = token.fontSize;
-              }
-            }
-
-            appliedTokensByNode.set(item.nodeId, tokenData);
-          });
-        } else {
-          // Aplica apenas para o node atual
-          const currentItem = items[currentIndex];
-          const tokenData = {
-            styleName: msg.styleName,
-            styleId: msg.styleId
-          };
-
-          if (currentTab === "colors") {
-            const token = appliedTokens.find(t => t.styleId === msg.styleId);
-            if (token && token.hex) {
-              tokenData.hex = token.hex;
-            }
-          } else {
-            // 🔥 Para tipografia, salva também fontStyle e fontSize
-            const token = appliedTokens.find(t => t.styleId === msg.styleId);
-            if (token) {
-              tokenData.fontStyle = token.fontStyle;
-              tokenData.fontSize = token.fontSize;
-            }
-          }
-
-          appliedTokensByNode.set(currentItem.nodeId, tokenData);
-        }
-
-        // 🔥 Atualiza os detalhes na tela (hex ou nome da fonte)
-        if (viewMode === "detail") {
-          const hexCodeEl = document.getElementById('hex-code');
-          if (hexCodeEl && msg.styleName) {
-            hexCodeEl.textContent = msg.styleName;
-          }
-
-          // Se for cor, atualiza também o swatch
-          if (currentTab === "colors" && msg.styleId) {
-            const detailSwatch = document.querySelector('.detail-swatch-large');
-            if (detailSwatch) {
-              // Busca a cor do token aplicado
-              const appliedToken = appliedTokens.find(t => t.styleId === msg.styleId);
-              if (appliedToken && appliedToken.hex) {
-                detailSwatch.style.backgroundColor = appliedToken.hex;
-              }
-            }
-          }
-
-          // 🔥 Re-renderiza para mostrar o check e atualizar descrição
-          if (currentTab === "colors") {
-            renderColorDetail();
-          } else {
-            renderTypographyDetail();
-          }
-        }
-      }
-
-      // 🔥 NOVO: Token removido com sucesso
-      if (msg.type === "token-removed-success") {
-        console.log("Token removido com sucesso!", msg);
-
-        // 🔥 Remove o último token aplicado
-        lastAppliedStyleId = null;
-
-        // 🔥 Remove dos tokens aplicados por nodeId
-        const items = currentTab === "colors" ? currentGroup.nodePaints : currentGroup.nodeStyles;
-
-        if (isSelectAllMode) {
-          items.forEach(item => {
-            appliedTokensByNode.delete(item.nodeId);
-          });
-        } else {
-          const currentItem = items[currentIndex];
-          appliedTokensByNode.delete(currentItem.nodeId);
-        }
-
-        // 🔥 Atualiza os detalhes na tela - volta para valor original
-        if (viewMode === "detail") {
-          const hexCodeEl = document.getElementById('hex-code');
-
-          if (currentTab === "colors") {
-            const entry = currentGroup.nodePaints[currentIndex];
-            const bg = paintToCss(entry.paint, entry.node);
-
-            if (hexCodeEl) {
-              hexCodeEl.textContent = currentGroup.label;
-            }
-
-            const detailSwatch = document.querySelector('.detail-swatch-large');
-            if (detailSwatch) {
-              detailSwatch.style.backgroundColor = bg;
-            }
-
-            renderColorDetail();
-          } else {
-            const entry = currentGroup.nodeStyles[currentIndex];
-            const style = entry.style;
-
-            if (hexCodeEl) {
-              hexCodeEl.textContent = style.fontFamily;
-            }
-
-            renderTypographyDetail();
-          }
-        }
-      }
-
-
-
-      // Erro ao aplicar token
-      if (msg.type === "token-applied-error") {
-        console.error("Erro ao aplicar token:", msg.message || "Erro desconhecido");
-
-        // Remove a classe "applying" de todos os itens
-        document.querySelectorAll('.token-item.applying').forEach(el => {
-          el.classList.remove('applying');
-        });
-
-        // Mostra mensagem de erro ao usuário se houver
-        if (msg.message) {
-          alert(msg.message);
-        }
-
-        return;
-      }
-
-      // Se clearAll for true, limpa TUDO e mostra empty
-      if (msg.clearAll) {
-        lastColorGroups = [];
-        lastTypographyGroups = [];
-        appliedTokens = [];
-        renderEmpty();
-        hideLoading();
-        return;
-      }
-
-      if (msg.type === "empty") {
-
-        // 🔥 Força estado correto
-        viewMode = "list";
-
-        // 🔥 Limpa qualquer detalhe aberto
-        clearDetail();
-
-        // 🔥 Limpa lista antiga
-        clearList();
-
-        // 🔥 Renderiza vazio
-        renderEmpty();
-
-        hideLoading();
-        return;
-      }
-
-
-      if (msg.type === "result-colors") {
-        lastColorGroups = msg.groups;
-        renderColorList(msg.groups);
-        // Garante que o loading seja escondido após a renderização
-        setTimeout(() => hideLoading(), 0);
-      }
-
-      if (msg.type === "result-suggested-tokens") {
-        appliedTokens = msg.tokens || [];
-        isLoadingTokens = false;
-        console.log("Tokens recebidos:", appliedTokens.length);
-        renderColorDetail();
-        if (!isSelectAllMode) {
-          selectCurrentNode();
-        }
-      }
-
-      if (msg.type === "result-suggested-text-tokens") {
-        appliedTokens = msg.tokens || [];
-        isLoadingTokens = false;
-        console.log("Tokens de texto recebidos:", appliedTokens.length);
-        renderTypographyDetail();
-        if (!isSelectAllMode) {
-          selectCurrentNode();
-        }
-      }
-
-      if (msg.type === "result-typography") {
-        lastTypographyGroups = msg.groups;
-        renderTypographyList(msg.groups);
-        // Garante que o loading seja escondido após a renderização
-        setTimeout(() => hideLoading(), 0);
-      }
-
-      if (msg.type === "init-tab") {
-        currentTab = msg.tab;
-      }
+      if (!msg) return;
+      if (msg.type === 'selection') updateSelectionUI(msg.targets, msg.frames);
+      if (msg.type === 'status')    showStatus(msg.message, '');
+      if (msg.type === 'done')    { setRunning(false); showResults(msg); }
+      if (msg.type === 'error')   { setRunning(false); showStatus('Erro: ' + msg.message, 'error'); }
     };
 
-    function renderEmpty() {
-      viewMode = "list";
-      renderTopBar(false);
-      app.innerHTML = `<div class="empty">Selecione frames ou sections para analisar</div>`;
-    }
-
-    function renderColorList(groups) {
-      viewMode = "list";
-      renderTopBar(true);
-
-      if (!groups.length) {
-        app.innerHTML = `
-    <div class="app-wrapper">
-      <h4>Elementos sem token aplicado:</h4>
-      <div class="empty-2">
-        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAARtSURBVHgBzVlNbBtFFP5mvIbiKMHQH3GoXa9aIyKQ6oIEF1BdDnDpJVyoxIUiIU4QlxM5VElUCTiBI04IIcIBiV7IIb20l7iCS5FARoqUSiSyGyMh2kBNGrutvbvT98ZZN3Fde9Z1fj7J2p+Z2fnyvTfvzbwI9Ig/S/W0BXnUhUhDICWUiiogym0CKHsQRbrST+U9eJeTsXAOPUAE6VwoqKhjeRkJjPpkjCdSKNIlJ93apG0/UTQeZ9KJibmWN0G3o+gDiOy0KdGuBJf+cjNQGA+qWNeJSVEp1YR90Pq+Y79OjYslN4s+qfZQAgrZw/HQmYe2t3vZMKmaAVQa2wAFkV9zxIljtii3tsl2A4jc3HaRY9BKTw1qQR7EAwQbZlUpbDtUemnZ/bL17SYTLy4770KI77CDUB7OJA+Fsv5zk2Dhb5XwXDWnlEpgZ1G+5Ujb98emiT3XG98F5BjRoZA37j9oBVk91/EK6AOu33Bw9rN/9f177zyJV17ag15AKj7FKmoFWT30CfNXa6hUFU68GsHnU//p+14wZHk6/q6bmBJ+n1CpejiwL4RTbw3q65XfbqMX0J+V4avkXUm/fI/Ne+FiBS8MP94kOxCR6BFRvWOSkMd7M8JmzF5cw/mZW6SahbdHBjG/cFeb1z4URq8gbkctMm9KC/oI+PGnVVy4VMGpkSGcfHMAhWs1TZhNzEQZrKQdt3Bgv2X8XUqBaYuoJRAAbMZZIlNcriMRC+vPzP1yG+fG9jXVmr1UpXYXHCTOz6zpd5Vq4/nc2F5zVZVKiaWSezPIVuqDj//RKuzfKzWxgYjAJ6NPN/2uE3hVR0jJj943nq4sg5Bjc11fcfHh+gRM6usvnjEix0jEw7ix4iIAooGW2JXf72gy7Fu/0v3JNwa0glsJyQcc087sfzapwIuAV6ipcj54HI8PADKxEMYEmVSEFPOzQ1D1issOmTnIKqZjAW2586YDmFCVyPnEgqQx33+DqC7o6ColVM50AK9ensSPZZzG5q/e1RmjG7794X+8/lpE+685QZW3HHh/CJitFfafuZ9XUal4eP65x/DVN/e94+UX9+idC/9a0xsHcl69Y5lBBAFlkpy2lWksZKXOfrqCAvkSg83FMbBwrU4xsdo0YztwaGIFjUHH0iPxkO0T5HPvhOnY+YWavnJGaF0ofttGtOtnQHCaCJ5ubFgblYOb2EWoOzV7mCoP2lls2rnyARq7BaTe8HpZpOnN0pWTQYL2loF8r051G/+xSZBV9AQmsdOges3whqLSpniQPBjK7qSpFc19pKWY1HZpLZa8bS19MLg+k4zJY63v20bokCNGiLtxCnx0qBwXj9q1dAxOXCtRonG62iqwWZMdym8dcxzX7TylTlO9poj+o0zqZDqRY3RNws/Grel6iOQXmEafwKpx/eVwLDTVrW+g/LNAJZKwrkLQQT/4WZoVy646cqpdoRL9ILgRhZI6Tv9eSPOxVUGT5Z+/4SjTlyk78UJTOdqV5O2YuIwecA/A0uHIhF2qXAAAAABJRU5ErkJggg==" alt="Ilustração"/>
-
-
-        Tudo certo por aqui!
-      </div>
-    </div>
-    `;
-        return;
-      }
-
-      app.innerHTML = `
-  <h4>Elementos sem token aplicado:</h4>
-  <div class="app-wrapper-2">
-    ${groups.map(g => {
-        const np = g.nodePaints[0];
-        const swatch = paintToCss(np.paint, np.node);
-
-        const typeLabel =
-          g.nodePaints.every(n => n.isStroke) ? "Stroke" :
-            g.nodePaints.every(n => !n.isStroke) ? "Fill" : "Mix";
-
-        return `
-        <div class="group" onclick='openDetail(${JSON.stringify(g)})'>
-          <div class="swatch-large" style="background:${swatch}" data-token-color="${swatch}"></div>
-
-          <div class="group-info">
-            <div class="group-info-top">
-              <strong class="hex" data-token-color="${swatch}">${g.label}</strong>
-              <span class="type-label">(${typeLabel.toLowerCase()})</span>
-            </div>
-
-            <div class="group-info-bottom">
-              ${g.nodePaints.length} ${g.nodePaints.length === 1 ? "elemento" : "elementos"}
-            </div>
-          </div>
-        </div>
-      `;
-      }).join("")}
-  </div>
-`;
-
-
-
-
-    }
-
-    function renderTypographyList(groups) {
-      viewMode = "list";
-      renderTopBar(true);
-
-      if (!groups.length) {
-        app.innerHTML = `
-    <div class="app-wrapper">
-      <h4>Textos sem estilos aplicados:</h4>
-      <div class="empty-2">
-        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAARtSURBVHgBzVlNbBtFFP5mvIbiKMHQH3GoXa9aIyKQ6oIEF1BdDnDpJVyoxIUiIU4QlxM5VElUCTiBI04IIcIBiV7IIb20l7iCS5FARoqUSiSyGyMh2kBNGrutvbvT98ZZN3Fde9Z1fj7J2p+Z2fnyvTfvzbwI9Ig/S/W0BXnUhUhDICWUiiogym0CKHsQRbrST+U9eJeTsXAOPUAE6VwoqKhjeRkJjPpkjCdSKNIlJ93apG0/UTQeZ9KJibmWN0G3o+gDiOy0KdGuBJf+cjNQGA+qWNeJSVEp1YR90Pq+Y79OjYslN4s+qfZQAgrZw/HQmYe2t3vZMKmaAVQa2wAFkV9zxIljtii3tsl2A4jc3HaRY9BKTw1qQR7EAwQbZlUpbDtUemnZ/bL17SYTLy4770KI77CDUB7OJA+Fsv5zk2Dhb5XwXDWnlEpgZ1G+5Ujb98emiT3XG98F5BjRoZA37j9oBVk91/EK6AOu33Bw9rN/9f177zyJV17ag15AKj7FKmoFWT30CfNXa6hUFU68GsHnU//p+14wZHk6/q6bmBJ+n1CpejiwL4RTbw3q65XfbqMX0J+V4avkXUm/fI/Ne+FiBS8MP94kOxCR6BFRvWOSkMd7M8JmzF5cw/mZW6SahbdHBjG/cFeb1z4URq8gbkctMm9KC/oI+PGnVVy4VMGpkSGcfHMAhWs1TZhNzEQZrKQdt3Bgv2X8XUqBaYuoJRAAbMZZIlNcriMRC+vPzP1yG+fG9jXVmr1UpXYXHCTOz6zpd5Vq4/nc2F5zVZVKiaWSezPIVuqDj//RKuzfKzWxgYjAJ6NPN/2uE3hVR0jJj943nq4sg5Bjc11fcfHh+gRM6usvnjEix0jEw7ix4iIAooGW2JXf72gy7Fu/0v3JNwa0glsJyQcc087sfzapwIuAV6ipcj54HI8PADKxEMYEmVSEFPOzQ1D1issOmTnIKqZjAW2586YDmFCVyPnEgqQx33+DqC7o6ColVM50AK9ensSPZZzG5q/e1RmjG7794X+8/lpE+685QZW3HHh/CJitFfafuZ9XUal4eP65x/DVN/e94+UX9+idC/9a0xsHcl69Y5lBBAFlkpy2lWksZKXOfrqCAvkSg83FMbBwrU4xsdo0YztwaGIFjUHH0iPxkO0T5HPvhOnY+YWavnJGaF0ofttGtOtnQHCaCJ5ubFgblYOb2EWoOzV7mCoP2lls2rnyARq7BaTe8HpZpOnN0pWTQYL2loF8r051G/+xSZBV9AQmsdOges3whqLSpniQPBjK7qSpFc19pKWY1HZpLZa8bS19MLg+k4zJY63v20bokCNGiLtxCnx0qBwXj9q1dAxOXCtRonG62iqwWZMdym8dcxzX7TylTlO9poj+o0zqZDqRY3RNws/Grel6iOQXmEafwKpx/eVwLDTVrW+g/LNAJZKwrkLQQT/4WZoVy646cqpdoRL9ILgRhZI6Tv9eSPOxVUGT5Z+/4SjTlyk78UJTOdqV5O2YuIwecA/A0uHIhF2qXAAAAABJRU5ErkJggg==" alt="Ilustração"/>
-
-
-        Tudo certo por aqui!
-      </div>
-    </div>
-    `;
-        return;
-      }
-
-      app.innerHTML = `
-  <h4>Textos sem estilos aplicados:</h4>
-  <div class="app-wrapper-2">
-    ${groups.map(g => {
-        const style = g.style;
-        const readableWeight = style.readableWeight || extractReadableWeight(style.fontStyle);
-        const fontWeight = typeof style.fontWeight === "number" ? style.fontWeight : 400;
-        const cssFont = parseFigmaFontStyle(style.fontStyle, fontWeight);
-
-        return `
-        <div class="group" onclick='openTypographyDetail(${JSON.stringify(g)})'>
-          <!-- Quadrado de preview da fonte -->
-          <div class="swatch-large" style="
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: '${style.fontFamily}', sans-serif;
-            font-weight: ${cssFont.weight};
-            font-style: ${cssFont.style};
-            font-size: 20px;
-            color: #18181B;
-            background-color: white;
-          ">
-            Ag
-          </div>
-
-          <!-- Informações da fonte -->
-          <div class="group-info">
-            <div class="group-info-top">
-              <strong class="hex">${style.fontFamily} ${readableWeight}</strong>
-            </div>
-
-            <div class="group-info-bottom">
-              ${g.nodeStyles.length} ${g.nodeStyles.length === 1 ? "elemento" : "elementos"}
-            </div>
-
-          </div>
-        </div>
-      `;
-      }).join("")}
-  </div>
-`;
-
-    }
-
-    function openDetail(group) {
-      // 🔥 Salva a seleção inicial quando abre os detalhes
-      parent.postMessage({ pluginMessage: { type: "save-initial-selection" } }, "*");
-
-      // 🔥 Salva o estado original dos nodes antes de aplicar tokens
-      parent.postMessage({ pluginMessage: { type: "save-original-state", nodeIds: group.nodePaints.map(np => np.nodeId) } }, "*");
-
-      currentGroup = group;
-      currentIndex = 0;
-      isSelectAllMode = false;
-      isLoadingTokens = true;
-      viewMode = "detail";
-      topBarContainer.innerHTML = "";
-      appliedTokens = [];
-
-      // 🔥 Verifica se o primeiro elemento tem um token aplicado
-      const firstItem = group.nodePaints[0];
-      const appliedToken = appliedTokensByNode.get(firstItem.nodeId);
-      lastAppliedStyleId = appliedToken ? appliedToken.styleId : null;
-
-      // Renderiza a tela com loading de tokens
-      renderColorDetail();
-
-      // Solicita tokens ao backend
-      parent.postMessage({ pluginMessage: { type: "get-suggested-tokens" } }, "*");
-    }
-
-    function openTypographyDetail(group) {
-      // 🔥 Salva a seleção inicial quando abre os detalhes
-      parent.postMessage({ pluginMessage: { type: "save-initial-selection" } }, "*");
-
-      // 🔥 Salva o estado original dos nodes antes de aplicar tokens
-      parent.postMessage({ pluginMessage: { type: "save-original-state", nodeIds: group.nodeStyles.map(ns => ns.nodeId) } }, "*");
-
-      currentGroup = group;
-      currentIndex = 0;
-      isSelectAllMode = false;
-      isLoadingTokens = true;
-      viewMode = "detail";
-      topBarContainer.innerHTML = "";
-      appliedTokens = [];
-
-      // 🔥 Verifica se o primeiro elemento tem um token aplicado
-      const firstItem = group.nodeStyles[0];
-      const appliedToken = appliedTokensByNode.get(firstItem.nodeId);
-      lastAppliedStyleId = appliedToken ? appliedToken.styleId : null;
-
-      // Renderiza a tela com loading de tokens
-      renderTypographyDetail();
-
-      // Solicita tokens ao backend
-      parent.postMessage({ pluginMessage: { type: "get-suggested-tokens" } }, "*");
-
-      // Seleciona o nó atual
-      selectCurrentNode();
-    }
-
-    function renderColorDetail() {
-      const entry = currentGroup.nodePaints[currentIndex];
-      const bg = paintToCss(entry.paint, entry.node);
-      const isStroke = entry.isStroke; // 🔥 Salva isStroke em variável
-
-      // 🔥 Verifica se este node já tem um token aplicado
-      const appliedTokenData = appliedTokensByNode.get(entry.nodeId);
-      const displayLabel = appliedTokenData ? appliedTokenData.styleName : currentGroup.label;
-      const displayBg = appliedTokenData && appliedTokenData.hex ? appliedTokenData.hex : bg;
-
-      app.innerHTML = `
-    <div class="detail-color-wrapper">
-      <div class="detail-color-container">
-        <div class="detail-left">
-          <h4>Cor:</h4>
-          <div class="container">
-            <div class="detail-swatch-large" style="background:${displayBg}"></div>  
-          
-            <div class="detail-info">
-              <div id="hex-code">${displayLabel}</div>
-              <div class="type-label">(${entry.isStroke ? "stroke" : "fill"})</div>
-            </div>
-            
-            <div class="detail-nav">
-              <button
-                onclick="prev()"
-                ${currentGroup.nodePaints.length <= 1 || isSelectAllMode ? "disabled" : ""}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                  stroke-width="1.5" stroke="currentColor" class="nav-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M15.75 19.5 8.25 12l7.5-7.5" />
-                </svg>
-              </button>
-
-              <span class="nav-counter">
-                ${isSelectAllMode
-          ? `${currentGroup.nodePaints.length} de ${currentGroup.nodePaints.length}`
-          : `${currentIndex + 1} de ${currentGroup.nodePaints.length}`
-        }
-              </span>
-
-              <button
-                onclick="next()"
-                ${currentGroup.nodePaints.length <= 1 || isSelectAllMode ? "disabled" : ""}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                  stroke-width="1.5" stroke="currentColor" class="nav-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                </svg>
-              </button>
-            </div>
-              
-            ${currentGroup.nodePaints.length > 1
-          ? `<label class="select-all-checkbox">
-                <input type="checkbox" ${isSelectAllMode ? "checked" : ""} onchange="toggleSelectAll(this.checked)">
-                <span>Selec. todos</span>
-              </label>`
-          : ""}
-          </div>
-        </div>
-
-        <div class="detail-right">
-          <h4>Tokens sugeridos:</h4>
-          <div class="tokens-container">
-            ${isLoadingTokens
-          ? `<div class="tokens-loading">
-                  <div class="spinner"></div>
-                  <div class="spinner-text">Buscando tokens...</div>
-                </div>`
-          : (appliedTokens.length > 0
-            ? `<div class="tokens-list">
-                    ${appliedTokens.map((token, idx) => {
-              const safeName = (token.name || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-              return `
-                      <div class="token-item" onclick="applyToken('${token.styleId || ''}', ${isStroke})" title="${safeName}">
-                        <div class="token-swatch" style="background:${token.hex}"></div>
-                        <div style="flex: 1; min-width: 0;">
-                          <div class="token-name">${token.name}</div>
-                        </div>
-                        ${lastAppliedStyleId === token.styleId ? `
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="token-check-icon">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                          </svg>
-                        ` : ''}
-                      </div>
-                    `}).join("")}
-                  </div>`
-            : `<div class="empty-state-tokens">
-                    Sem tokens de cor para sugerir.
-                  </div>`
-          )
-        }
-          </div>
-        </div>
-      </div>
-
-      <div class="detail-footer">
-        <button class="back-button" onclick="back()">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-          </svg> 
-          Voltar para a lista
-        </button>
-      </div>
-    </div>
-  `;
-    }
-
-    function renderTypographyDetail() {
-      const entry = currentGroup.nodeStyles[currentIndex];
-      const style = entry.style;
-
-      // 🔥 Verifica se este node já tem um token aplicado
-      const appliedTokenData = appliedTokensByNode.get(entry.nodeId);
-
-      // 🔥 Usa dados do token aplicado se existir, senão usa do estilo original
-      const displayLabel = appliedTokenData ? appliedTokenData.styleName : style.fontFamily;
-      const displayFontStyle = appliedTokenData && appliedTokenData.fontStyle ? appliedTokenData.fontStyle : style.fontStyle;
-      const displayFontSize = appliedTokenData && appliedTokenData.fontSize
-        ? `${appliedTokenData.fontSize}px`
-        : (typeof style.fontSize === "number" ? `${style.fontSize}px` : style.fontSize);
-
-      const fontWeight = typeof style.fontWeight === "number" ? style.fontWeight : 400;
-      const cssFont = parseFigmaFontStyle(style.fontStyle, fontWeight);
-
-      app.innerHTML = `
-    <div class="detail-color-wrapper">
-      <div class="detail-color-container">
-
-        <!-- ESQUERDA (igual cor) -->
-        <div class="detail-left">
-          <h4>Fonte:</h4>
-
-          <div class="container">
-            <div
-              class="detail-swatch-large"
-              style="
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-family: '${style.fontFamily}', sans-serif;
-                font-size: 28px;
-                font-weight: ${cssFont.weight};
-                font-style: ${cssFont.style};
-                background: white;
-                color: #18181B;
-              "
-            >
-              Ag
-            </div>
-
-            <div class="detail-info">
-              <div id="hex-code">${displayLabel}</div>
-              <div class="type-label">
-                ${displayFontStyle} ${displayFontSize}
-              </div>
-            </div>
-
-            <div class="detail-nav">
-              <button
-                onclick="prev()"
-                ${currentGroup.nodeStyles.length <= 1 || isSelectAllMode ? "disabled" : ""}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                  stroke-width="1.5" stroke="currentColor" class="nav-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M15.75 19.5 8.25 12l7.5-7.5" />
-                </svg>
-              </button>
-
-              <span class="nav-counter">
-                ${isSelectAllMode
-          ? `${currentGroup.nodeStyles.length} de ${currentGroup.nodeStyles.length}`
-          : `${currentIndex + 1} de ${currentGroup.nodeStyles.length}`
-        }
-              </span>
-
-              <button
-                onclick="next()"
-                ${currentGroup.nodeStyles.length <= 1 || isSelectAllMode ? "disabled" : ""}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                  stroke-width="1.5" stroke="currentColor" class="nav-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                </svg>
-              </button>
-            </div>
-
-            ${currentGroup.nodeStyles.length > 1
-          ? `<label class="select-all-checkbox">
-                    <input type="checkbox" ${isSelectAllMode ? "checked" : ""} onchange="toggleSelectAll(this.checked)">
-                    <span>Selec. todos</span>
-                  </label>`
-          : ""
-        }
-          </div>
-        </div>
-
-        <!-- DIREITA (infos da fonte) -->
-        <div class="detail-right">
-          <h4>Estilos sugeridos:</h4>
-
-          <div class="tokens-container">
-            ${isLoadingTokens
-          ? `<div class="tokens-loading">
-                  <div class="spinner"></div>
-                  <div class="spinner-text">Buscando estilos...</div>
-                </div>`
-          : (appliedTokens.length > 0
-            ? `<div class="tokens-list">
-                    ${appliedTokens.map(token => {
-              const safeName = (token.name || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-              return `
-                      <div
-                        class="token-item"
-                        style="display: flex; flex-direction: row;"
-                        onclick="applyToken('${token.styleId || ''}', false)"
-                        title="${safeName}"
-                      >
-                        <div style="flex: 1; min-width: 0;">
-                          <div class="token-name">${token.name}</div>
-                          ${token.fontSize ? `<div class="token-info-small">
-                            ${token.fontStyle || ''} ${token.fontSize}px
-                          </div>` : ''}
-                        </div>
-                        ${lastAppliedStyleId === token.styleId ? `
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="token-check-icon">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                          </svg>
-                        ` : ''}
-                      </div>
-                    `}).join("")}
-                  </div>`
-            : `<div class="empty-state-tokens">
-                    Sem estilos de fonte para sugerir.
-                  </div>`
-          )
-        }
-          </div>
-        </div>
-
-      </div>
-
-      <div class="detail-footer">
-        <button class="back-button" onclick="back()">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-          </svg>
-          Voltar para a lista
-        </button>
-      </div>
-    </div>
-  `;
-    }
-
-
-    function next() {
-      if (isSelectAllMode) {
-        return;
-      }
-
-      const items =
-        currentTab === "colors"
-          ? currentGroup.nodePaints
-          : currentGroup.nodeStyles;
-
-      currentIndex = (currentIndex + 1) % items.length;
-
-      // 🔥 Verifica se o próximo elemento tem um token aplicado
-      const nextItem = items[currentIndex];
-      const appliedToken = appliedTokensByNode.get(nextItem.nodeId);
-      lastAppliedStyleId = appliedToken ? appliedToken.styleId : null;
-
-      if (currentTab === "colors") {
-        renderColorDetail();
-      } else {
-        renderTypographyDetail();
-      }
-
-      selectCurrentNode();
-    }
-
-
-    function prev() {
-      if (isSelectAllMode) {
-        return;
-      }
-
-      const items =
-        currentTab === "colors"
-          ? currentGroup.nodePaints
-          : currentGroup.nodeStyles;
-
-      currentIndex = (currentIndex - 1 + items.length) % items.length;
-
-      // 🔥 Verifica se o elemento anterior tem um token aplicado
-      const prevItem = items[currentIndex];
-      const appliedToken = appliedTokensByNode.get(prevItem.nodeId);
-      lastAppliedStyleId = appliedToken ? appliedToken.styleId : null;
-
-      if (currentTab === "colors") {
-        renderColorDetail();
-      } else {
-        renderTypographyDetail();
-      }
-
-      selectCurrentNode();
-    }
-
-
-    // 🔥 CORRIGIDO: Agora aceita isStroke como parâmetro
-    function applyToken(styleId, isStroke = false) {
-      console.log("🔵 applyToken chamado:", { styleId, isStroke, currentTab });
-
-      const items =
-        currentTab === "colors"
-          ? currentGroup.nodePaints
-          : currentGroup.nodeStyles;
-
-      let nodeIds;
-
-      if (isSelectAllMode) {
-        // Aplica em todos
-        nodeIds = items.map(n => n.nodeId);
-      } else {
-        // Aplica só no atual
-        nodeIds = [items[currentIndex].nodeId];
-      }
-
-      console.log("🔵 nodeIds:", nodeIds);
-
-      // 🔥 NOVO: Verifica se está clicando no token já aplicado para desaplicar
-      if (lastAppliedStyleId === styleId) {
-        console.log("🔵 Desaplicando token...");
-        // Remove o token aplicado
-        if (currentTab === "colors") {
-          removeColorToken(nodeIds, isStroke);
-        } else {
-          removeTextToken(nodeIds);
-        }
-        return;
-      }
-
-      if (currentTab === "colors") {
-        // Para cores, usa apply-token-multiple com isStroke
-        console.log("🔵 Aplicando cor...");
-        applyTokenToNodes(styleId, nodeIds, isStroke);
-      } else {
-        // Para tipografia, usa apply-typography-token-multiple
-        console.log("🔵 Aplicando tipografia...", { type: "apply-typography-token-multiple", styleId, nodeIds });
-        parent.postMessage({
-          pluginMessage: {
-            type: "apply-typography-token-multiple",
-            styleId,
-            nodeIds
-          }
-        }, "*");
-      }
-    }
-
-    // 🔥 NOVA FUNÇÃO: Remove token de cor
-    function removeColorToken(nodeIds, isStroke) {
-      parent.postMessage({
-        pluginMessage: {
-          type: "remove-color-token",
-          nodeIds,
-          isStroke
-        }
-      }, "*");
-    }
-
-    // 🔥 NOVA FUNÇÃO: Remove token de texto
-    function removeTextToken(nodeIds) {
-      parent.postMessage({
-        pluginMessage: {
-          type: "remove-text-token",
-          nodeIds
-        }
-      }, "*");
-    }
-
-
-    function back() {
-      viewMode = "list";
-      isSelectAllMode = false;
-      appliedTokens = [];
-      isLoadingTokens = false;
-      appliedTokensByNode.clear(); // 🔥 Limpa os tokens aplicados
-      hideLoading();
-      renderTopBar(true);
-
-      // 🔥 Notifica o backend que voltou para list view
-      parent.postMessage({ pluginMessage: { type: "back-to-list" } }, "*");
-
-      if (currentTab === "colors") {
-        renderColorList(lastColorGroups);
-      } else {
-        renderTypographyList(lastTypographyGroups);
-      }
-    }
+    parent.postMessage({ pluginMessage: { type: 'analyze' } }, '*');
   </script>
 </body>
-
 </html>

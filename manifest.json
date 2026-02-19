@@ -1,17 +1,11 @@
 {
-  "name": "Arandu Toolkit",
-  "id": "1597758285673937411",
+  "name": "Variable Substitution",
+  "id": "variable-substitution-plugin",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
   "editorType": ["figma"],
   "documentAccess": "dynamic-page",
-  "networkAccess": {
-    "allowedDomains": [
-      "https://fonts.googleapis.com",
-      "https://fonts.gstatic.com"
-    ]
-  },
   "permissions": [
     "teamlibrary"
   ]
