@@ -5,7 +5,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -25,82 +24,119 @@
       overflow: hidden;
     }
 
-    /* ── HEADER ──────────────────────────────────────────── */
+    /* ── HEADER ── */
     .header h1 { font-size: 14px; font-weight: 600; }
-    .header .subtitle { font-size: 11px; color: rgba(24,24,27,0.5); margin-top: 2px; line-height: 1.4; }
+    .header .subtitle { font-size: 11px; color: rgba(24,24,27,.5); margin-top: 2px; line-height: 1.4; }
 
-    /* ── SELECTION ───────────────────────────────────────── */
+    /* ── LOCK BANNER ── */
+    .lock-banner {
+      display: none;
+      align-items: center; gap: 8px;
+      padding: 8px 11px;
+      background: #FFF7ED; border: 1.5px solid #FED7AA; border-radius: 8px;
+      font-size: 11px; color: #92400E; font-weight: 500;
+    }
+    .lock-banner.visible { display: flex; }
+    .lock-banner svg { width: 14px; height: 14px; flex-shrink: 0; color: #D97706; }
+
+    /* ── SELECTION ── */
     .selection-panel { display: flex; flex-direction: column; gap: 6px; }
 
     .panel-label {
-      font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
-      text-transform: uppercase; color: rgba(24,24,27,0.45); padding: 0 2px;
+      font-size: 10px; font-weight: 600; letter-spacing: .06em;
+      text-transform: uppercase; color: rgba(24,24,27,.45); padding: 0 2px;
     }
 
     .tag-row {
       display: flex; flex-wrap: wrap; gap: 5px;
-      padding: 8px 10px;
-      background: white;
-      border-radius: 8px;
-      border: 1.5px solid #E4E4E7;
-      min-height: 38px;
-      align-items: center;
+      padding: 8px 10px; background: white; border-radius: 8px;
+      border: 1.5px solid #E4E4E7; min-height: 38px; align-items: center;
+      transition: opacity .2s;
     }
+    .tag-row.locked { opacity: .4; pointer-events: none; }
     .tag-row.has-items { border-color: #4361EE; }
     .tag-row.dest-row.has-items { border-color: #7C3AED; }
     .tag-row.empty-row { border-style: dashed; }
 
-    .empty-hint { font-size: 11px; color: rgba(24,24,27,0.35); }
+    .empty-hint { font-size: 11px; color: rgba(24,24,27,.35); }
 
     .tag {
       display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 7px 3px 5px;
-      border-radius: 5px;
-      font-size: 11px; font-weight: 500;
-      max-width: 200px;
+      padding: 3px 7px 3px 5px; border-radius: 5px;
+      font-size: 11px; font-weight: 500; max-width: 200px;
     }
     .tag-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .tag-badge {
-      font-size: 9px; font-weight: 700;
-      background: rgba(0,0,0,0.12);
-      border-radius: 3px; padding: 1px 4px; flex-shrink: 0;
-    }
+    .tag-badge { font-size: 9px; font-weight: 700; background: rgba(0,0,0,.12); border-radius: 3px; padding: 1px 4px; flex-shrink: 0; }
+    .tag-set       { background: #F5F0FF; color: #6D28D9; border: 1px solid #DDD6FE; }
+    .tag-component { background: #EEF1FD; color: #3730A3; border: 1px solid #C7D2FE; }
+    .tag-instance  { background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
+    .tag-frame     { background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
 
-    /* tag colors by type */
-    .tag-set      { background: #F5F0FF; color: #6D28D9; border: 1px solid #DDD6FE; }
-    .tag-component{ background: #EEF1FD; color: #3730A3; border: 1px solid #C7D2FE; }
-    .tag-instance { background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
-    .tag-frame    { background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
-
-    /* ── DIVIDER ─────────────────────────────────────────── */
+    /* ── DIVIDER ── */
     .divider { height: 1px; background: #E4E4E7; }
 
-    /* ── RUN BUTTON ──────────────────────────────────────── */
+    /* ── BUTTONS ── */
+    .btn-row { display: flex; gap: 8px; }
+
     .run-btn {
       display: flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 10px 20px;
-      background: #4361EE; color: white;
-      font-family: "Inter", sans-serif;
-      font-size: 13px; font-weight: 600;
-      border: none; border-radius: 8px;
-      cursor: pointer; transition: background 0.15s; width: 100%;
+      padding: 10px 20px; background: #4361EE; color: white;
+      font-family: "Inter", sans-serif; font-size: 13px; font-weight: 600;
+      border: none; border-radius: 8px; cursor: pointer; transition: background .15s; flex: 1;
     }
     .run-btn:hover:not(:disabled) { background: #2D41E3; }
-    .run-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+    .run-btn:disabled { opacity: .38; cursor: not-allowed; }
     .run-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
 
-    /* ── STATUS ──────────────────────────────────────────── */
-    .status-area {
-      flex: 1; overflow: hidden;
-      display: flex; flex-direction: column; gap: 8px; min-height: 0;
+    .clear-btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 14px; background: white; color: rgba(24,24,27,.55);
+      font-family: "Inter", sans-serif; font-size: 12px; font-weight: 500;
+      border: 1.5px solid #E4E4E7; border-radius: 8px;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
     }
-    .status-text {
-      font-size: 11px; color: rgba(24,24,27,0.55);
-      text-align: center; padding: 4px 0;
-    }
-    .status-text.error { color: #DC2626; font-weight: 500; }
+    .clear-btn:hover:not(:disabled) { background: #F4F4F5; color: #18181B; border-color: #D4D4D8; }
+    .clear-btn:disabled { opacity: .3; cursor: not-allowed; }
+    .clear-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
 
-    /* ── RESULTS ─────────────────────────────────────────── */
+    /* ── STATUS AREA ── */
+    .status-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+
+    /* ── PHASE STEPPER ── */
+    .phase-stepper {
+      display: none; flex-direction: column; gap: 0;
+      background: white; border: 1.5px solid #E4E4E7; border-radius: 10px;
+      overflow: hidden;
+    }
+    .phase-stepper.visible { display: flex; }
+
+    .phase-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; font-size: 11px;
+      border-bottom: 1px solid #F4F4F5;
+    }
+    .phase-row:last-child { border-bottom: none; }
+
+    .phase-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: #E4E4E7; transition: background .3s;
+    }
+    .phase-row.active   .phase-dot { background: #4361EE; box-shadow: 0 0 0 3px rgba(67,97,238,.2); }
+    .phase-row.complete .phase-dot { background: #16A34A; }
+
+    .phase-label {
+      font-size: 10px; font-weight: 600; flex-shrink: 0;
+      min-width: 52px; text-transform: uppercase; letter-spacing: .04em;
+      color: rgba(24,24,27,.35);
+    }
+    .phase-row.active   .phase-label { color: #4361EE; }
+    .phase-row.complete .phase-label { color: #16A34A; }
+
+    .phase-msg { flex: 1; color: rgba(24,24,27,.5); font-size: 11px; }
+    .phase-row.active   .phase-msg { color: #18181B; }
+    .phase-row.complete .phase-msg { color: rgba(24,24,27,.55); }
+
+    /* ── RESULTS ── */
     .results-box {
       border: 1.5px solid #E4E4E7; border-radius: 10px;
       background: white; overflow: hidden;
@@ -108,8 +144,7 @@
     }
     .results-header {
       padding: 9px 12px; border-bottom: 1px solid #E4E4E7;
-      display: flex; align-items: center; justify-content: space-between;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
     }
     .results-header-title { font-size: 12px; font-weight: 600; }
 
@@ -118,128 +153,154 @@
     .pill.ok      { background: #DCFCE7; color: #15803D; }
     .pill.fail    { background: #FEE2E2; color: #B91C1C; }
     .pill.skip    { background: #FEF9C3; color: #854D0E; }
-    .pill.neutral { background: #F4F4F5; color: rgba(24,24,27,0.55); }
+    .pill.neutral { background: #F4F4F5; color: rgba(24,24,27,.55); }
 
-    /* Tabs */
     .result-tabs { display: flex; border-bottom: 1px solid #E4E4E7; flex-shrink: 0; }
     .result-tab {
-      flex: 1; padding: 7px 0;
-      font-size: 11px; font-weight: 500;
-      color: rgba(24,24,27,0.45);
-      cursor: pointer; text-align: center;
-      border-bottom: 2px solid transparent;
-      transition: all 0.15s; user-select: none;
+      flex: 1; padding: 7px 0; font-size: 11px; font-weight: 500;
+      color: rgba(24,24,27,.45); cursor: pointer; text-align: center;
+      border-bottom: 2px solid transparent; transition: all .15s; user-select: none;
     }
-    .result-tab.active           { color: #4361EE; border-bottom-color: #4361EE; }
-    .result-tab.skip-tab.active  { color: #92400E; border-bottom-color: #D97706; }
-    .result-tab.fail-tab.active  { color: #B91C1C; border-bottom-color: #DC2626; }
+    .result-tab.active          { color: #4361EE; border-bottom-color: #4361EE; }
+    .result-tab.skip-tab.active { color: #92400E; border-bottom-color: #D97706; }
+    .result-tab.fail-tab.active { color: #B91C1C; border-bottom-color: #DC2626; }
 
     .tab-panel { display: none; flex: 1; overflow-y: auto; padding: 8px; flex-direction: column; gap: 4px; }
     .tab-panel.active { display: flex; }
 
-    /* Items */
-    .result-item {
-      display: flex; align-items: flex-start; gap: 7px;
-      padding: 7px 9px; border-radius: 7px;
-    }
+    .result-item { display: flex; align-items: flex-start; gap: 7px; padding: 7px 9px; border-radius: 7px; }
     .result-item.ok   { background: #F0FDF4; }
     .result-item.fail { background: #FEF2F2; }
-    .result-item.skip { background: #FFFBEB; }
 
     .ri-icon { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; }
     .ri-body { flex: 1; min-width: 0; }
     .ri-node { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ri-detail { font-size: 10px; color: rgba(24,24,27,0.5); margin-top: 2px; line-height: 1.4; }
+    .ri-detail { font-size: 10px; color: rgba(24,24,27,.5); margin-top: 2px; line-height: 1.4; }
     .ri-arrow { color: #4361EE; font-weight: 700; margin: 0 3px; }
     .ri-prop {
-      display: inline-block;
-      background: #EEF1FD; color: #4361EE;
-      font-size: 9px; font-weight: 600;
-      border-radius: 3px; padding: 1px 4px; margin-right: 4px;
+      display: inline-block; background: #EEF1FD; color: #4361EE;
+      font-size: 9px; font-weight: 600; border-radius: 3px; padding: 1px 4px; margin-right: 4px;
     }
-    .ri-reason { font-size: 10px; color: #92400E; margin-top: 2px; font-style: italic; }
+
+    /* Skip rows */
+    .skip-name-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 11px; background: #FFFBEB;
+      border: 1.5px solid #FDE68A; border-radius: 8px;
+      cursor: pointer; transition: background .12s, border-color .12s; user-select: none;
+    }
+    .skip-name-row:hover  { background: #FEF3C7; border-color: #F59E0B; }
+    .skip-name-row:active { background: #FDE68A; }
+    .skip-warn-icon { width: 14px; height: 14px; flex-shrink: 0; color: #D97706; }
+    .skip-name-label { flex: 1; min-width: 0; font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #18181B; }
+    .skip-name-count { font-size: 10px; font-weight: 700; background: rgba(0,0,0,.07); color: #92400E; border-radius: 20px; padding: 2px 8px; flex-shrink: 0; }
+    .skip-select-hint { font-size: 9px; color: #B45309; flex-shrink: 0; opacity: .65; font-weight: 500; }
 
     /* Idle */
     .idle-hint {
       flex: 1; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      gap: 8px; color: rgba(24,24,27,0.35);
-      font-size: 11px; text-align: center; padding: 16px; line-height: 1.5;
+      gap: 8px; color: rgba(24,24,27,.35); font-size: 11px; text-align: center; padding: 16px; line-height: 1.5;
     }
     .idle-hint svg { width: 28px; height: 28px; }
 
     .tab-empty {
       flex: 1; display: flex; align-items: center; justify-content: center;
-      font-size: 11px; color: rgba(24,24,27,0.4);
-      text-align: center; padding: 16px; line-height: 1.5;
+      font-size: 11px; color: rgba(24,24,27,.4); text-align: center; padding: 16px; line-height: 1.5;
     }
 
-    /* Spinner */
     .spinner {
       width: 15px; height: 15px;
-      border: 2px solid rgba(255,255,255,0.35);
-      border-top-color: white; border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      display: inline-block; flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,.35); border-top-color: white; border-radius: 50%;
+      animation: spin .7s linear infinite; display: inline-block; flex-shrink: 0;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-  <!-- HEADER -->
   <div class="header">
     <h1>Variable Substitution</h1>
-    <div class="subtitle">Substitui variáveis por nome — aceita Component Set, Component ou Instance como destino</div>
+    <div class="subtitle">Substitui variáveis por nome — Componentes mães primeiro, instâncias externas reportadas</div>
+  </div>
+
+  <!-- LOCK BANNER -->
+  <div class="lock-banner" id="lockBanner">
+    <svg viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+    </svg>
+    Limpe os resultados antes de fazer uma nova seleção.
   </div>
 
   <!-- SELECTION -->
   <div class="selection-panel">
-
     <div class="panel-label">Destino — Component Set / Component / Instance</div>
     <div class="tag-row dest-row empty-row" id="targetsRow">
       <span class="empty-hint" id="targetsEmpty">Selecione componentes ou component sets</span>
     </div>
-
     <div class="panel-label">Origem das variáveis — Frames</div>
     <div class="tag-row empty-row" id="framesRow">
       <span class="empty-hint" id="framesEmpty">Selecione um ou mais Frames</span>
     </div>
-
   </div>
 
   <div class="divider"></div>
 
-  <button class="run-btn" id="runBtn" disabled onclick="run()">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
-    Substituir variáveis
-  </button>
+  <!-- BUTTONS -->
+  <div class="btn-row">
+    <button class="run-btn" id="runBtn" disabled onclick="run()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+      Substituir variáveis
+    </button>
+    <button class="clear-btn" id="clearBtn" disabled onclick="clearResults()" title="Limpar resultados">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6M9 6V4h6v2"/>
+      </svg>
+      Limpar
+    </button>
+  </div>
 
-  <!-- STATUS + RESULTS -->
+  <!-- STATUS AREA -->
   <div class="status-area">
 
     <div class="idle-hint" id="idleHint">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M12 8v4l3 3"/>
+        <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
       </svg>
-      Selecione os destinos e os frames de origem, depois clique em "Substituir variáveis"
+      Selecione os destinos e os frames de origem,<br>depois clique em "Substituir variáveis"
     </div>
 
-    <div class="status-text" id="statusMsg" style="display:none"></div>
+    <!-- PHASE STEPPER -->
+    <div class="phase-stepper" id="phaseStepper">
+      <div class="phase-row" id="phase-collecting">
+        <div class="phase-dot"></div>
+        <span class="phase-label">Coleta</span>
+        <span class="phase-msg" id="msg-collecting">Aguardando...</span>
+      </div>
+      <div class="phase-row" id="phase-p1">
+        <div class="phase-dot"></div>
+        <span class="phase-label">Fase 1</span>
+        <span class="phase-msg" id="msg-p1">Componentes mães</span>
+      </div>
+      <div class="phase-row" id="phase-p2">
+        <div class="phase-dot"></div>
+        <span class="phase-label">Fase 2</span>
+        <span class="phase-msg" id="msg-p2">Instâncias externas</span>
+      </div>
+    </div>
 
+    <!-- RESULTS -->
     <div class="results-box" id="resultsBox" style="display:none">
       <div class="results-header">
         <span class="results-header-title">Resultado</span>
         <div class="stat-pills" id="statPills"></div>
       </div>
-
       <div class="result-tabs">
         <div class="result-tab active"   onclick="switchTab('ok')"   id="tab-ok">✓ Aplicadas</div>
         <div class="result-tab skip-tab" onclick="switchTab('skip')" id="tab-skip" style="display:none">⚠ Ignoradas</div>
         <div class="result-tab fail-tab" onclick="switchTab('fail')" id="tab-fail" style="display:none">✗ Falhas</div>
       </div>
-
       <div class="tab-panel active" id="panel-ok"></div>
       <div class="tab-panel"        id="panel-skip"></div>
       <div class="tab-panel"        id="panel-fail"></div>
@@ -251,14 +312,136 @@
     let hasTargets = false;
     let hasFrames  = false;
     let isRunning  = false;
+    let hasResults = false;
 
-    // ── Selection UI ─────────────────────────────────────────────
+    // ── Phase stepper ───────────────────────────────────────────────────────
+
+    // Maps pipeline phase key → { rowId, msgId }
+    const PHASES = [
+      { key: 'collecting',        rowId: 'phase-collecting', msgId: 'msg-collecting' },
+      { key: 'phase1_components', rowId: 'phase-p1',         msgId: 'msg-p1'         },
+      { key: 'phase2_instances',  rowId: 'phase-p2',         msgId: 'msg-p2'         },
+      { key: 'done',              rowId: 'phase-p2',         msgId: 'msg-p2'         },
+    ];
+
+    function setPhase(phaseKey, message) {
+      const currentIdx = PHASES.findIndex(p => p.key === phaseKey);
+      if (currentIdx === -1) return;
+
+      // Unique rows (done reuses phase-p2)
+      const uniqueRows = ['phase-collecting', 'phase-p1', 'phase-p2'];
+      uniqueRows.forEach((rowId, i) => {
+        const row = document.getElementById(rowId);
+        if (!row) return;
+        row.classList.remove('active', 'complete');
+        // Map row index to phase index (0→0, 1→1, 2→2/3)
+        const rowPhaseIdx = i; // collecting=0, p1=1, p2=2
+        if (rowPhaseIdx < currentIdx) row.classList.add('complete');
+        else if (rowPhaseIdx === Math.min(currentIdx, 2)) row.classList.add('active');
+      });
+
+      if (message) {
+        const p = PHASES[currentIdx];
+        const el = document.getElementById(p.msgId);
+        if (el) el.textContent = message;
+      }
+
+      if (phaseKey === 'done') {
+        document.getElementById('phase-p2').classList.remove('active');
+        document.getElementById('phase-p2').classList.add('complete');
+      }
+    }
+
+    // ── Lock / unlock ───────────────────────────────────────────────────────
+
+    function lockSelection() {
+      hasResults = true;
+      document.getElementById('lockBanner').classList.add('visible');
+      document.getElementById('targetsRow').classList.add('locked');
+      document.getElementById('framesRow').classList.add('locked');
+      updateButtons();
+    }
+
+    function unlockSelection() {
+      hasResults = false;
+      document.getElementById('lockBanner').classList.remove('visible');
+      document.getElementById('targetsRow').classList.remove('locked');
+      document.getElementById('framesRow').classList.remove('locked');
+      updateButtons();
+    }
+
+    // ── Buttons ─────────────────────────────────────────────────────────────
+
+    function updateButtons() {
+      document.getElementById('runBtn').disabled   = !hasTargets || !hasFrames || isRunning || hasResults;
+      document.getElementById('clearBtn').disabled = !hasResults || isRunning;
+    }
+
+    function setRunning(v) {
+      isRunning = v;
+      document.getElementById('runBtn').innerHTML = v
+        ? `<div class="spinner"></div> Processando...`
+        : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg> Substituir variáveis`;
+      updateButtons();
+    }
+
+    // ── Clear ───────────────────────────────────────────────────────────────
+
+    function clearResults() {
+      unlockSelection();
+      document.getElementById('resultsBox').style.display   = 'none';
+      document.getElementById('phaseStepper').classList.remove('visible');
+      document.getElementById('idleHint').style.display     = 'flex';
+      document.getElementById('panel-ok').innerHTML   = '';
+      document.getElementById('panel-skip').innerHTML = '';
+      document.getElementById('panel-fail').innerHTML = '';
+      document.getElementById('statPills').innerHTML  = '';
+      document.getElementById('tab-skip').style.display = 'none';
+      document.getElementById('tab-fail').style.display = 'none';
+      document.getElementById('tab-ok').textContent     = '✓ Aplicadas';
+      document.getElementById('tab-skip').textContent   = '⚠ Ignoradas';
+      document.getElementById('tab-fail').textContent   = '✗ Falhas';
+      switchTab('ok');
+      // Reset stepper
+      ['phase-collecting','phase-p1','phase-p2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active','complete');
+      });
+      document.getElementById('msg-collecting').textContent = 'Aguardando...';
+      document.getElementById('msg-p1').textContent         = 'Componentes mães';
+      document.getElementById('msg-p2').textContent         = 'Instâncias externas';
+      updateButtons();
+    }
+
+    // ── Run ─────────────────────────────────────────────────────────────────
+
+    function run() {
+      if (isRunning || hasResults) return;
+      setRunning(true);
+      document.getElementById('idleHint').style.display   = 'none';
+      document.getElementById('resultsBox').style.display = 'none';
+      document.getElementById('phaseStepper').classList.add('visible');
+      setPhase('collecting', 'Coletando variáveis...');
+      parent.postMessage({ pluginMessage: { type: 'run' } }, '*');
+    }
+
+    // ── Tabs ─────────────────────────────────────────────────────────────────
+
+    function switchTab(name) {
+      ['ok','skip','fail'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('active', t === name);
+        document.getElementById(`panel-${t}`).classList.toggle('active', t === name);
+      });
+    }
+
+    // ── Selection UI ─────────────────────────────────────────────────────────
 
     function updateSelectionUI(targets, frames) {
+      if (hasResults) return; // locked
+
       const row   = document.getElementById('targetsRow');
       const empty = document.getElementById('targetsEmpty');
       hasTargets  = targets.length > 0;
-
       row.querySelectorAll('.tag').forEach(t => t.remove());
 
       if (hasTargets) {
@@ -267,12 +450,10 @@
         targets.forEach(t => {
           const tag = document.createElement('div');
           const cls = t.type === 'COMPONENT_SET' ? 'tag-set'
-                    : t.type === 'COMPONENT'     ? 'tag-component'
-                    : 'tag-instance';
+                    : t.type === 'COMPONENT'     ? 'tag-component' : 'tag-instance';
           const badge = t.type === 'COMPONENT_SET'
-            ? `<span class="tag-badge">${t.variantCount}v</span>`
-            : '';
-          const label = t.type === 'INSTANCE' && t.mainName
+            ? `<span class="tag-badge">${t.variantCount}v</span>` : '';
+          const label = (t.type === 'INSTANCE' && t.mainName)
             ? `${esc(t.name)} <span style="opacity:.6;font-size:10px">→ ${esc(t.mainName)}</span>`
             : esc(t.name);
           tag.className = `tag ${cls}`;
@@ -303,142 +484,52 @@
         fEmpty.style.display = '';
       }
 
-      updateRunBtn();
+      updateButtons();
     }
 
-    function updateRunBtn() {
-      document.getElementById('runBtn').disabled = !hasTargets || !hasFrames || isRunning;
-    }
-
-    // ── Run ──────────────────────────────────────────────────────
-
-    function setRunning(running) {
-      isRunning = running;
-      document.getElementById('runBtn').innerHTML = running
-        ? `<div class="spinner"></div> Processando...`
-        : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg> Substituir variáveis`;
-      updateRunBtn();
-    }
-
-    function showStatus(msg, type) {
-      const el = document.getElementById('statusMsg');
-      el.style.display = 'block';
-      el.textContent = msg;
-      el.className = `status-text ${type || ''}`;
-    }
-
-    function run() {
-      if (isRunning) return;
-      setRunning(true);
-      document.getElementById('idleHint').style.display = 'none';
-      document.getElementById('resultsBox').style.display = 'none';
-      showStatus('Iniciando...', '');
-      parent.postMessage({ pluginMessage: { type: 'run' } }, '*');
-    }
-
-    // ── Tabs ─────────────────────────────────────────────────────
-
-    function switchTab(name) {
-      ['ok','skip','fail'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.toggle('active', t === name);
-        document.getElementById(`panel-${t}`).classList.toggle('active', t === name);
-      });
-    }
-
-    // ── Results ──────────────────────────────────────────────────
+    // ── Results ──────────────────────────────────────────────────────────────
 
     function showResults(data) {
-      document.getElementById('idleHint').style.display = 'none';
-      document.getElementById('statusMsg').style.display = 'none';
+      setRunning(false);
 
-      const box = document.getElementById('resultsBox');
-      box.style.display = 'flex';
+      // data.phase1Results = success/failed from component subtrees
+      // data.phase2Results = skipped_instance (external only)
+      const okItems   = (data.phase1Results || []).filter(r => r.status === 'success');
+      const failItems = (data.phase1Results || []).filter(r => r.status === 'failed');
+      const skipItems = data.phase2Results || [];
 
       document.getElementById('statPills').innerHTML = `
-        <span class="pill ok">✓ ${data.successCount}</span>
-        ${data.skippedInstanceCount > 0 ? `<span class="pill skip">⚠ ${data.skippedInstanceCount}</span>` : ''}
-        ${data.failedCount > 0          ? `<span class="pill fail">✗ ${data.failedCount}</span>`          : ''}
-        <span class="pill neutral">${data.total} total</span>`;
+        <span class="pill ok">✓ ${okItems.length}</span>
+        ${skipItems.length > 0 ? `<span class="pill skip">⚠ ${skipItems.length}</span>` : ''}
+        ${failItems.length > 0 ? `<span class="pill fail">✗ ${failItems.length}</span>` : ''}
+        <span class="pill neutral">${okItems.length + skipItems.length + failItems.length} total</span>`;
 
       const tabSkip = document.getElementById('tab-skip');
       const tabFail = document.getElementById('tab-fail');
-      tabSkip.style.display = data.skippedInstanceCount > 0 ? '' : 'none';
-      tabFail.style.display = data.failedCount          > 0 ? '' : 'none';
+      tabSkip.style.display = skipItems.length > 0 ? '' : 'none';
+      tabFail.style.display = failItems.length > 0 ? '' : 'none';
 
-      document.getElementById('tab-ok').textContent   = `✓ Aplicadas (${data.successCount})`;
-      if (data.skippedInstanceCount > 0) tabSkip.textContent = `⚠ Ignoradas (${data.skippedInstanceCount})`;
-      if (data.failedCount > 0)          tabFail.textContent = `✗ Falhas (${data.failedCount})`;
+      document.getElementById('tab-ok').textContent  = `✓ Aplicadas (${okItems.length})`;
+      if (skipItems.length > 0) tabSkip.textContent  = `⚠ Ignoradas (${skipItems.length})`;
+      if (failItems.length > 0) tabFail.textContent  = `✗ Falhas (${failItems.length})`;
 
-      renderPanel('ok',   data.results.filter(r => r.status === 'success'),          renderOk);
-      renderPanel('skip', data.results.filter(r => r.status === 'skipped_instance'), renderSkip);
-      renderPanel('fail', data.results.filter(r => r.status === 'failed'),            renderFail);
+      renderOkPanel  (okItems);
+      renderSkipPanel(skipItems);
+      renderFailPanel(failItems);
+
+      document.getElementById('resultsBox').style.display = 'flex';
+      lockSelection();
     }
 
-    function renderPanel(name, items, renderer) {
-      const panel = document.getElementById(`panel-${name}`);
-      panel.innerHTML = items.length === 0
-        ? `<div class="tab-empty">${tabEmptyMsg(name)}</div>`
-        : items.map(renderer).join('');
-    }
-
-    function tabEmptyMsg(tab) {
-      if (tab === 'ok')   return 'Nenhuma substituição foi aplicada.<br>As variáveis já podem estar corretas ou sem nomes em comum.';
-      if (tab === 'skip') return 'Nenhuma instância foi ignorada.';
-      return 'Nenhuma falha registrada.';
-    }
+    // ── Icons ─────────────────────────────────────────────────────────────────
 
     const iconOk   = `<svg class="ri-icon" viewBox="0 0 20 20" fill="#16A34A"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>`;
-    const iconWarn = `<svg class="ri-icon" viewBox="0 0 20 20" fill="#D97706"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`;
     const iconFail = `<svg class="ri-icon" viewBox="0 0 20 20" fill="#DC2626"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>`;
+    const iconWarn = `<svg class="skip-warn-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`;
 
     function propLabel(r) {
-      return r.paintSubProp
-        ? `${r.property}[${r.paintIndex ?? 0}].${r.paintSubProp}`
-        : r.property;
-    }
-
-    function renderOk(r) {
-      return `<div class="result-item ok">
-        ${iconOk}
-        <div class="ri-body">
-          <div class="ri-node">${esc(r.nodeName)}</div>
-          <div class="ri-detail">
-            <span class="ri-prop">${esc(propLabel(r))}</span>
-            ${esc(short(r.oldVariableName))}
-            <span class="ri-arrow">→</span>
-            ${esc(short(r.newVariableName ?? ''))}
-          </div>
-        </div>
-      </div>`;
-    }
-
-    function renderSkip(r) {
-      return `<div class="result-item skip">
-        ${iconWarn}
-        <div class="ri-body">
-          <div class="ri-node">${esc(r.nodeName)}</div>
-          <div class="ri-detail">
-            <span class="ri-prop">${esc(propLabel(r))}</span>
-            ${esc(short(r.oldVariableName))}
-            <span class="ri-arrow">→</span>
-            ${esc(short(r.newVariableName ?? ''))}
-          </div>
-          <div class="ri-reason">${esc(r.reason ?? '')}</div>
-        </div>
-      </div>`;
-    }
-
-    function renderFail(r) {
-      return `<div class="result-item fail">
-        ${iconFail}
-        <div class="ri-body">
-          <div class="ri-node">${esc(r.nodeName)}</div>
-          <div class="ri-detail">
-            <span class="ri-prop">${esc(propLabel(r))}</span>
-            ${esc(short(r.oldVariableName))}
-          </div>
-        </div>
-      </div>`;
+      if (!r.property || r.property === '—') return null;
+      return r.paintSubProp ? `${r.property}[${r.paintIndex ?? 0}].${r.paintSubProp}` : r.property;
     }
 
     function short(name) {
@@ -446,21 +537,112 @@
       return parts.length > 2 ? `…/${parts.slice(-2).join('/')}` : name;
     }
 
-    function esc(str) {
-      return String(str)
+    function esc(s) {
+      return String(s)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // ── Messages ─────────────────────────────────────────────────
+    function renderOkPanel(items) {
+      const panel = document.getElementById('panel-ok');
+      if (!items.length) {
+        panel.innerHTML = `<div class="tab-empty">Nenhuma substituição foi aplicada.<br>As variáveis já podem estar corretas ou sem nomes em comum.</div>`;
+        return;
+      }
+      panel.innerHTML = items.map(r => {
+        const pl = propLabel(r);
+        return `<div class="result-item ok">
+          ${iconOk}
+          <div class="ri-body">
+            <div class="ri-node">${esc(r.nodeName)}</div>
+            <div class="ri-detail">
+              ${pl ? `<span class="ri-prop">${esc(pl)}</span>` : ''}
+              ${esc(short(r.oldVariableName))}
+              <span class="ri-arrow">→</span>
+              ${esc(short(r.newVariableName ?? ''))}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderSkipPanel(items) {
+      const panel = document.getElementById('panel-skip');
+      if (!items.length) {
+        panel.innerHTML = `<div class="tab-empty">Nenhuma instância externa foi ignorada.</div>`;
+        return;
+      }
+      // Group by nodeName
+      const byName = new Map();
+      for (const r of items) {
+        if (!byName.has(r.nodeName)) byName.set(r.nodeName, { nodeIds: [] });
+        byName.get(r.nodeName).nodeIds.push(r.nodeId);
+      }
+      const sorted = [...byName.entries()].sort((a, b) => b[1].nodeIds.length - a[1].nodeIds.length);
+
+      panel.innerHTML = '';
+      for (const [name, { nodeIds }] of sorted) {
+        const count = nodeIds.length;
+        const row   = document.createElement('div');
+        row.className = 'skip-name-row';
+        row.title     = `Clique para selecionar ${count} instância${count !== 1 ? 's' : ''} no Figma`;
+        row.innerHTML = `
+          ${iconWarn}
+          <span class="skip-name-label">${esc(name)}</span>
+          <span class="skip-name-count">${count} instância${count !== 1 ? 's' : ''}</span>
+          <span class="skip-select-hint">selecionar ↗</span>`;
+        const ids = [...nodeIds];
+        row.addEventListener('click', () =>
+          parent.postMessage({ pluginMessage: { type: 'select-nodes', nodeIds: ids } }, '*')
+        );
+        panel.appendChild(row);
+      }
+    }
+
+    function renderFailPanel(items) {
+      const panel = document.getElementById('panel-fail');
+      if (!items.length) {
+        panel.innerHTML = `<div class="tab-empty">Nenhuma falha registrada.</div>`;
+        return;
+      }
+      panel.innerHTML = items.map(r => {
+        const pl = propLabel(r);
+        return `<div class="result-item fail">
+          ${iconFail}
+          <div class="ri-body">
+            <div class="ri-node">${esc(r.nodeName)}</div>
+            <div class="ri-detail">
+              ${pl ? `<span class="ri-prop">${esc(pl)}</span>` : ''}
+              ${esc(short(r.oldVariableName))}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Messages ─────────────────────────────────────────────────────────────
 
     onmessage = (e) => {
       const msg = e.data.pluginMessage;
       if (!msg) return;
+
       if (msg.type === 'selection') updateSelectionUI(msg.targets, msg.frames);
-      if (msg.type === 'status')    showStatus(msg.message, '');
-      if (msg.type === 'done')    { setRunning(false); showResults(msg); }
-      if (msg.type === 'error')   { setRunning(false); showStatus('Erro: ' + msg.message, 'error'); }
+
+      if (msg.type === 'phase') setPhase(msg.phase, msg.message);
+
+      if (msg.type === 'done') showResults(msg);
+
+      if (msg.type === 'error') {
+        setRunning(false);
+        document.getElementById('phaseStepper').classList.remove('visible');
+        const hint = document.getElementById('idleHint');
+        hint.style.display = 'flex';
+        hint.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span style="color:#DC2626;font-weight:500">Erro: ${esc(msg.message)}</span>`;
+      }
     };
 
     parent.postMessage({ pluginMessage: { type: 'analyze' } }, '*');
