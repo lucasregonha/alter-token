@@ -36,21 +36,7 @@ type PipelinePhase =
   | "phase3_swap"
   | "done";
 
-// Typography scalar props that Figma exposes via boundVariables on TextNode
-const FONT_BOUND_PROPS = new Set([
-  "fontSize",
-  "fontWeight",
-  "fontStyle",
-  "lineHeight",
-  "letterSpacing",
-  "paragraphSpacing",
-  "paragraphIndent",
-]);
-
-// Accepted top-level target node types
 type TargetNode = ComponentSetNode | ComponentNode | InstanceNode;
-
-// ── Swap pipeline types ────────────────────────────────────────────────────
 
 type SwapStatus = "swapped" | "not_found" | "already_local" | "no_main";
 
@@ -73,6 +59,41 @@ interface SwapReport {
 // ============================================================
 
 figma.showUI(__html__, { width: 420, height: 1200 });
+
+// ============================================================
+// CACHES GLOBAIS
+// ============================================================
+
+const _varCache = new Map<string, Variable | null>();
+const _collCache = new Map<string, VariableCollection | null>();
+const _styleCache = new Map<string, BaseStyle | null>();
+
+async function getVariableCached(id: string): Promise<Variable | null> {
+  if (_varCache.has(id)) return _varCache.get(id)!;
+  try {
+    const v = await figma.variables.getVariableByIdAsync(id);
+    _varCache.set(id, v);
+    return v;
+  } catch { _varCache.set(id, null); return null; }
+}
+
+async function getCollectionCached(id: string): Promise<VariableCollection | null> {
+  if (_collCache.has(id)) return _collCache.get(id)!;
+  try {
+    const c = await figma.variables.getVariableCollectionByIdAsync(id);
+    _collCache.set(id, c);
+    return c;
+  } catch { _collCache.set(id, null); return null; }
+}
+
+async function getStyleCached(id: string): Promise<BaseStyle | null> {
+  if (_styleCache.has(id)) return _styleCache.get(id)!;
+  try {
+    const s = await figma.getStyleByIdAsync(id);
+    _styleCache.set(id, s);
+    return s;
+  } catch { _styleCache.set(id, null); return null; }
+}
 
 // ============================================================
 // HELPERS
@@ -132,35 +153,31 @@ async function walkAll(
 async function extractVariableBindings(node: SceneNode): Promise<VariableBinding[]> {
   const bindings: VariableBinding[] = [];
 
-  // ── 1. Scalar / typography boundVariables ─────────────────────────────
+  // ── 1. Scalar / typography boundVariables ─────────────────
   if ("boundVariables" in node && node.boundVariables) {
     const bv = node.boundVariables as Record<string, any>;
     for (const prop of Object.keys(bv)) {
       if (prop === "fills" || prop === "strokes" || prop === "effects") continue;
-
       const alias = bv[prop] as any;
       if (!alias) continue;
-
       const aliases: any[] = Array.isArray(alias) ? alias : [alias];
       for (const a of aliases) {
         if (!a || a.type !== "VARIABLE_ALIAS" || !a.id) continue;
         try {
-          const variable = await figma.variables.getVariableByIdAsync(a.id);
+          const variable = await getVariableCached(a.id);
           if (!variable) continue;
-          const collection = await figma.variables.getVariableCollectionByIdAsync(
-            variable.variableCollectionId
-          );
+          const collection = await getCollectionCached(variable.variableCollectionId);
           bindings.push({
             nodeId: node.id, nodeName: node.name, property: prop,
             variableId: variable.id, variableName: variable.name,
             collectionName: collection?.name ?? "",
           });
-        } catch { /* variable inaccessible */ }
+        } catch { /* skip */ }
       }
     }
   }
 
-  // ── 2. Fills ───────────────────────────────────────────────────────────
+  // ── 2. Fills ───────────────────────────────────────────────
   if ("fills" in node && Array.isArray(node.fills)) {
     for (let i = 0; i < node.fills.length; i++) {
       const paint = node.fills[i] as any;
@@ -169,11 +186,9 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
         const alias = paint.boundVariables[subProp] as any;
         if (!alias || alias.type !== "VARIABLE_ALIAS" || !alias.id) continue;
         try {
-          const variable = await figma.variables.getVariableByIdAsync(alias.id);
+          const variable = await getVariableCached(alias.id);
           if (!variable) continue;
-          const collection = await figma.variables.getVariableCollectionByIdAsync(
-            variable.variableCollectionId
-          );
+          const collection = await getCollectionCached(variable.variableCollectionId);
           bindings.push({
             nodeId: node.id, nodeName: node.name,
             property: "fills", paintSubProp: subProp, paintIndex: i,
@@ -185,7 +200,7 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
     }
   }
 
-  // ── 3. Strokes ─────────────────────────────────────────────────────────
+  // ── 3. Strokes ─────────────────────────────────────────────
   if ("strokes" in node && Array.isArray(node.strokes)) {
     for (let i = 0; i < node.strokes.length; i++) {
       const paint = node.strokes[i] as any;
@@ -194,11 +209,9 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
         const alias = paint.boundVariables[subProp] as any;
         if (!alias || alias.type !== "VARIABLE_ALIAS" || !alias.id) continue;
         try {
-          const variable = await figma.variables.getVariableByIdAsync(alias.id);
+          const variable = await getVariableCached(alias.id);
           if (!variable) continue;
-          const collection = await figma.variables.getVariableCollectionByIdAsync(
-            variable.variableCollectionId
-          );
+          const collection = await getCollectionCached(variable.variableCollectionId);
           bindings.push({
             nodeId: node.id, nodeName: node.name,
             property: "strokes", paintSubProp: subProp, paintIndex: i,
@@ -210,7 +223,7 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
     }
   }
 
-  // ── 4. Effects ─────────────────────────────────────────────────────────
+  // ── 4. Effects ─────────────────────────────────────────────
   if ("effects" in node && Array.isArray(node.effects)) {
     for (let i = 0; i < node.effects.length; i++) {
       const effect = node.effects[i] as any;
@@ -219,11 +232,9 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
         const alias = effect.boundVariables[subProp] as any;
         if (!alias || alias.type !== "VARIABLE_ALIAS" || !alias.id) continue;
         try {
-          const variable = await figma.variables.getVariableByIdAsync(alias.id);
+          const variable = await getVariableCached(alias.id);
           if (!variable) continue;
-          const collection = await figma.variables.getVariableCollectionByIdAsync(
-            variable.variableCollectionId
-          );
+          const collection = await getCollectionCached(variable.variableCollectionId);
           bindings.push({
             nodeId: node.id, nodeName: node.name,
             property: "effects", paintSubProp: subProp, paintIndex: i,
@@ -235,36 +246,33 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
     }
   }
 
-  // ── 4b. effectStyleId ────────────────────────────────────────────────
+  // ── 4b. effectStyleId ──────────────────────────────────────
   if ("effectStyleId" in node) {
     const styleId = (node as any).effectStyleId as string;
     if (styleId && styleId.length > 0) {
       try {
-        const style = await figma.getStyleByIdAsync(styleId);
+        const style = await getStyleCached(styleId);
         if (style && style.name) {
           bindings.push({
             nodeId: node.id, nodeName: node.name,
             property: "effectStyleId",
-            variableId: styleId,
-            variableName: style.name,
+            variableId: styleId, variableName: style.name,
             collectionName: "EffectStyle",
           });
         }
-      } catch { /* style inaccessible */ }
+      } catch { /* skip */ }
     }
   }
 
-  // ── 5. TextNode typography variables ─────────────────────────────────
+  // ── 5. TextNode typography variables ──────────────────────
   if (node.type === "TEXT") {
     const textNode = node as TextNode;
-
     const VALID_SEGMENT_FIELDS: any[] = [
       "fontSize", "lineHeight", "letterSpacing",
       "paragraphSpacing", "paragraphIndent",
       "fontName", "fontWeight", "fontStyle",
       "textStyleId", "boundVariables",
     ];
-
     const seenKeys = new Set(bindings.map(b => b.variableId + "|" + b.property));
 
     try {
@@ -283,11 +291,15 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
               if (seenKeys.has(dk)) continue;
               seenKeys.add(dk);
               try {
-                const variable = await figma.variables.getVariableByIdAsync(a.id);
+                const variable = await getVariableCached(a.id);
                 if (!variable) continue;
-                const collection = await figma.variables.getVariableCollectionByIdAsync(variable.variableCollectionId);
-                bindings.push({ nodeId: node.id, nodeName: node.name, property: prop, variableId: variable.id, variableName: variable.name, collectionName: collection?.name ?? "" });
-              } catch { /* inaccessible */ }
+                const collection = await getCollectionCached(variable.variableCollectionId);
+                bindings.push({
+                  nodeId: node.id, nodeName: node.name, property: prop,
+                  variableId: variable.id, variableName: variable.name,
+                  collectionName: collection?.name ?? "",
+                });
+              } catch { /* skip */ }
             }
           }
         }
@@ -298,17 +310,16 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
           if (!seenKeys.has(dk)) {
             seenKeys.add(dk);
             try {
-              const style = await figma.getStyleByIdAsync(styleId);
+              const style = await getStyleCached(styleId);
               if (style && style.name) {
                 bindings.push({
                   nodeId: node.id, nodeName: node.name,
                   property: "textStyleId",
-                  variableId: styleId,
-                  variableName: style.name,
+                  variableId: styleId, variableName: style.name,
                   collectionName: "TextStyle",
                 });
               }
-            } catch { /* style inaccessible */ }
+            } catch { /* skip */ }
           }
         }
       }
@@ -319,7 +330,7 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
 }
 
 // ============================================================
-// FRAME VARIABLE MAP  +  FRAME STYLE MAP
+// FRAME VARIABLE MAP + FRAME STYLE MAP
 // ============================================================
 
 interface FrameMaps {
@@ -336,15 +347,12 @@ async function buildFrameMaps(frames: FrameNode[]): Promise<FrameMaps> {
       const bindings = await extractVariableBindings(node);
       for (const b of bindings) {
         const key = normalizeName(b.variableName);
-
         if (b.property === "textStyleId" || b.property === "effectStyleId") {
           if (!styleMap.has(key)) styleMap.set(key, b.variableId);
         } else {
           if (!varMap.has(key)) {
-            try {
-              const v = await figma.variables.getVariableByIdAsync(b.variableId);
-              if (v) varMap.set(key, v);
-            } catch { /* skip */ }
+            const v = await getVariableCached(b.variableId);
+            if (v) varMap.set(key, v);
           }
         }
       }
@@ -394,83 +402,54 @@ async function applySubstitution(
     const { property, paintIndex, paintSubProp } = binding;
     const idx = paintIndex ?? 0;
 
-    // ── Fills ────────────────────────────────────────────────────────────
+    // ── Fills ──────────────────────────────────────────────
     if (property === "fills" && "fills" in node && Array.isArray(node.fills)) {
       const paints = [...node.fills] as any[];
       const paint = paints[idx];
       if (!paint) return false;
-
       if (paintSubProp === "color" && paint.type === "SOLID") {
-        paints[idx] = figma.variables.setBoundVariableForPaint(
-          paint as SolidPaint, "color", newVariable
-        );
+        paints[idx] = figma.variables.setBoundVariableForPaint(paint as SolidPaint, "color", newVariable);
       } else if (paintSubProp) {
-        paints[idx] = {
-          ...paint,
-          boundVariables: {
-            ...paint.boundVariables,
-            [paintSubProp]: { type: "VARIABLE_ALIAS", id: newVariable.id },
-          },
-        };
-      } else {
-        return false;
-      }
+        paints[idx] = { ...paint, boundVariables: { ...paint.boundVariables, [paintSubProp]: { type: "VARIABLE_ALIAS", id: newVariable.id } } };
+      } else { return false; }
       (node as any).fills = paints;
       return true;
     }
 
-    // ── Strokes ──────────────────────────────────────────────────────────
+    // ── Strokes ────────────────────────────────────────────
     if (property === "strokes" && "strokes" in node && Array.isArray(node.strokes)) {
       const paints = [...node.strokes] as any[];
       const paint = paints[idx];
       if (!paint) return false;
-
       if (paintSubProp === "color" && paint.type === "SOLID") {
-        paints[idx] = figma.variables.setBoundVariableForPaint(
-          paint as SolidPaint, "color", newVariable
-        );
+        paints[idx] = figma.variables.setBoundVariableForPaint(paint as SolidPaint, "color", newVariable);
       } else if (paintSubProp) {
-        paints[idx] = {
-          ...paint,
-          boundVariables: {
-            ...paint.boundVariables,
-            [paintSubProp]: { type: "VARIABLE_ALIAS", id: newVariable.id },
-          },
-        };
-      } else {
-        return false;
-      }
+        paints[idx] = { ...paint, boundVariables: { ...paint.boundVariables, [paintSubProp]: { type: "VARIABLE_ALIAS", id: newVariable.id } } };
+      } else { return false; }
       (node as any).strokes = paints;
       return true;
     }
 
-    // ── Effects ───────────────────────────────────────────────────────────
+    // ── Effects ────────────────────────────────────────────
     if (property === "effects" && "effects" in node && Array.isArray(node.effects)) {
       const effects = [...node.effects] as Effect[];
       const effect = effects[idx];
       if (!effect || !paintSubProp) return false;
-
-      const updatedEffect = figma.variables.setBoundVariableForEffect(
-        effect,
-        paintSubProp as VariableBindableEffectField,
-        newVariable
+      effects[idx] = figma.variables.setBoundVariableForEffect(
+        effect, paintSubProp as VariableBindableEffectField, newVariable
       );
-      effects[idx] = updatedEffect;
       (node as any).effects = effects;
       return true;
     }
 
-    // ── Typography (TextNode) ─────────────────────────────────────────────
+    // ── Typography (TextNode) ──────────────────────────────
     if (node.type === "TEXT") {
       await ensureFontsLoaded(node as TextNode);
-      (node as TextNode).setBoundVariable(
-        property as VariableBindableTextField,
-        newVariable
-      );
+      (node as TextNode).setBoundVariable(property as VariableBindableTextField, newVariable);
       return true;
     }
 
-    // ── Generic scalar ────────────────────────────────────────────────────
+    // ── Generic scalar ─────────────────────────────────────
     if ("setBoundVariable" in node) {
       (node as any).setBoundVariable(property, newVariable);
       return true;
@@ -495,9 +474,7 @@ async function applySubstitutionsToNode(
 
     if (binding.property === "textStyleId") {
       const targetStyleId = maps.styleMap.get(key);
-      if (!targetStyleId) continue;
-      if (targetStyleId === binding.variableId) continue;
-
+      if (!targetStyleId || targetStyleId === binding.variableId) continue;
       let ok = false;
       try {
         await ensureFontsLoaded(node as TextNode);
@@ -510,17 +487,14 @@ async function applySubstitutionsToNode(
         status: ok ? "success" : "failed",
         nodeId: binding.nodeId, nodeName: binding.nodeName, nodeType: node.type,
         property: "textStyleId",
-        oldVariableName: binding.variableName,
-        newVariableName: binding.variableName,
+        oldVariableName: binding.variableName, newVariableName: binding.variableName,
       });
       continue;
     }
 
     if (binding.property === "effectStyleId") {
       const targetStyleId = maps.styleMap.get(key);
-      if (!targetStyleId) continue;
-      if (targetStyleId === binding.variableId) continue;
-
+      if (!targetStyleId || targetStyleId === binding.variableId) continue;
       let ok = false;
       try {
         await (node as any).setEffectStyleIdAsync(targetStyleId);
@@ -532,15 +506,13 @@ async function applySubstitutionsToNode(
         status: ok ? "success" : "failed",
         nodeId: binding.nodeId, nodeName: binding.nodeName, nodeType: node.type,
         property: "effectStyleId",
-        oldVariableName: binding.variableName,
-        newVariableName: binding.variableName,
+        oldVariableName: binding.variableName, newVariableName: binding.variableName,
       });
       continue;
     }
 
     const frameVar = maps.varMap.get(key);
-    if (!frameVar) continue;
-    if (frameVar.id === binding.variableId) continue;
+    if (!frameVar || frameVar.id === binding.variableId) continue;
 
     const ok = await applySubstitution(node, binding, frameVar);
     results.push({
@@ -639,23 +611,16 @@ async function processInstanceNodes(
 
   for (const node of instances) {
     let mainComponent: ComponentNode | null = null;
-    try {
-      mainComponent = await node.getMainComponentAsync();
-    } catch { /* external / inaccessible */ }
+    try { mainComponent = await node.getMainComponentAsync(); } catch { /* skip */ }
 
     const mainId = mainComponent?.id ?? null;
     const inScope = mainId !== null && selectedComponentIds.has(mainId);
-
     if (inScope) continue;
 
     results.push({
       status: "skipped_instance",
-      nodeId: node.id,
-      nodeName: node.name,
-      nodeType: "INSTANCE",
-      property: "—",
-      oldVariableName: "—",
-      newVariableName: undefined,
+      nodeId: node.id, nodeName: node.name, nodeType: "INSTANCE",
+      property: "—", oldVariableName: "—", newVariableName: undefined,
     });
   }
 
@@ -702,43 +667,29 @@ function generateReport(
 // ============================================================
 // FASE 3 — Swap de componentes remotos → locais
 // ============================================================
+
+function collectDirectInstances(node: SceneNode, result: InstanceNode[]): void {
+  if (node.type === "INSTANCE") {
+    result.push(node as InstanceNode);
+    return; // Não entra dentro da instância
+  }
+  if ("children" in node) {
+    for (const child of (node as ChildrenMixin).children) {
+      if (isSceneNode(child)) collectDirectInstances(child, result);
+    }
+  }
+}
+
 async function runSwapPhase(
   selectedComponent: ComponentNode,
-  processedInstIds: Set<string>   // ← novo parâmetro
+  processedInstIds: Set<string>,
+  localComponentMap: Map<string, ComponentNode>
 ) {
-  await figma.loadAllPagesAsync();
   const swapped: any[] = [];
   const ignored: any[] = [];
 
-  function collectDirectInstances(node: SceneNode, result: InstanceNode[]): void {
-    if (node.type === "INSTANCE") {
-      result.push(node as InstanceNode);
-      return;
-    }
-    if ("children" in node) {
-      for (const child of (node as ChildrenMixin).children) {
-        if (isSceneNode(child)) collectDirectInstances(child, result);
-      }
-    }
-  }
-
   const instances: InstanceNode[] = [];
   collectDirectInstances(selectedComponent, instances);
-
-  const localComponentMap = new Map<string, ComponentNode>();
-  for (const page of figma.root.children) {
-    const locals = page.findAll(
-      (n): n is ComponentNode => n.type === "COMPONENT" && !n.remote
-    ) as ComponentNode[];
-    for (const comp of locals) {
-      const setName = comp.parent?.type === "COMPONENT_SET" ? comp.parent.name : null;
-      if (setName) {
-        const qualKey = `${setName}/${comp.name}`;
-        if (!localComponentMap.has(qualKey)) localComponentMap.set(qualKey, comp);
-      }
-      if (!localComponentMap.has(comp.name)) localComponentMap.set(comp.name, comp);
-    }
-  }
 
   for (const inst of instances) {
     try {
@@ -747,7 +698,7 @@ async function runSwapPhase(
       const instId = inst.id;
       const instName = inst.name;
 
-      // Pula instâncias já processadas em iterações anteriores do loop
+      // Pula instâncias já processadas em iterações anteriores
       if (processedInstIds.has(instId)) continue;
       processedInstIds.add(instId);
 
@@ -764,17 +715,19 @@ async function runSwapPhase(
         continue;
       }
 
+      // Já é local — ignora silenciosamente (filtrado no return)
       if (!main.remote) {
-        // already_local é filtrado no return — não aparece na UI
         ignored.push({ status: "already_local", nodeId: instId, nodeName: instName, mainComponentName: main.name });
         continue;
       }
 
       const mainName = main.name;
 
+      // Match qualificado: "NomeInstância/NomeDaVariante"
       const qualifiedKey = `${instName}/${mainName}`;
       let localEquivalent = localComponentMap.get(qualifiedKey);
 
+      // Fallback: nome simples, só aceita se o set local tem o mesmo nome da instância
       if (!localEquivalent) {
         const candidate = localComponentMap.get(mainName);
         if (candidate) {
@@ -816,6 +769,11 @@ async function runPipeline(
   frames: FrameNode[]
 ): Promise<PipelineReport> {
 
+  // Limpa caches a cada execução
+  _varCache.clear();
+  _collCache.clear();
+  _styleCache.clear();
+
   // ── Fase 0: Coleta de variáveis ──────────────────────────
   postPhase("collecting", "Coletando variáveis dos frames de referência...");
   const maps = await buildFrameMaps(frames);
@@ -844,12 +802,29 @@ async function runPipeline(
   // ── Fase 3: Swap de componentes remotos ──────────────────
   postPhase("phase3_swap", "Fase 3 — Fazendo swap de componentes remotos...");
 
+  // Carrega páginas e constrói o mapa UMA única vez para todos os componentes
+  await figma.loadAllPagesAsync();
+  const localComponentMap = new Map<string, ComponentNode>();
+  for (const page of figma.root.children) {
+    const locals = page.findAll(
+      (n): n is ComponentNode => n.type === "COMPONENT" && !n.remote
+    ) as ComponentNode[];
+    for (const comp of locals) {
+      const setName = comp.parent?.type === "COMPONENT_SET" ? comp.parent.name : null;
+      if (setName) {
+        const qualKey = `${setName}/${comp.name}`;
+        if (!localComponentMap.has(qualKey)) localComponentMap.set(qualKey, comp);
+      }
+      if (!localComponentMap.has(comp.name)) localComponentMap.set(comp.name, comp);
+    }
+  }
+
   const allSwapped: any[] = [];
   const allIgnored: any[] = [];
   const processedInstIds = new Set<string>();
 
   for (const comp of components) {
-    const result = await runSwapPhase(comp as ComponentNode, processedInstIds);
+    const result = await runSwapPhase(comp as ComponentNode, processedInstIds, localComponentMap);
     allSwapped.push(...result.swapped);
     allIgnored.push(...result.ignored);
   }
