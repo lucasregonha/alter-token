@@ -33,6 +33,7 @@ type PipelinePhase =
   | "collecting"
   | "phase1_components"
   | "phase2_instances"
+  | "phase3_swap"
   | "done";
 
 // Typography scalar props that Figma exposes via boundVariables on TextNode
@@ -48,6 +49,24 @@ const FONT_BOUND_PROPS = new Set([
 
 // Accepted top-level target node types
 type TargetNode = ComponentSetNode | ComponentNode | InstanceNode;
+
+// ── Swap pipeline types ────────────────────────────────────────────────────
+
+type SwapStatus = "swapped" | "not_found" | "already_local" | "no_main";
+
+interface SwapResult {
+  status: SwapStatus;
+  nodeId: string;
+  nodeName: string;
+  mainComponentName: string;
+  localComponentId?: string;
+}
+
+interface SwapReport {
+  swapped: SwapResult[];
+  ignored: SwapResult[];
+  total: number;
+}
 
 // ============================================================
 // UI
@@ -78,7 +97,7 @@ function postPhase(phase: PipelinePhase, message: string): void {
 async function traverseNodeTree(
   root: SceneNode,
   onInstance: (node: InstanceNode) => Promise<void>,
-  onRegular:  (node: SceneNode)   => Promise<void>
+  onRegular: (node: SceneNode) => Promise<void>
 ): Promise<void> {
   if (root.type === "INSTANCE") {
     await onInstance(root as InstanceNode);
@@ -330,12 +349,12 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
 // They cannot go through figma.variables.getVariableByIdAsync, so they live separately.
 
 interface FrameMaps {
-  varMap:   Map<string, Variable>;
+  varMap: Map<string, Variable>;
   styleMap: Map<string, string>;  // normalizedName → styleId
 }
 
 async function buildFrameMaps(frames: FrameNode[]): Promise<FrameMaps> {
-  const varMap   = new Map<string, Variable>();
+  const varMap = new Map<string, Variable>();
   const styleMap = new Map<string, string>();
 
   for (const frame of frames) {
@@ -413,7 +432,7 @@ async function applySubstitution(
     // ── Fills ────────────────────────────────────────────────────────────
     if (property === "fills" && "fills" in node && Array.isArray(node.fills)) {
       const paints = [...node.fills] as any[];
-      const paint  = paints[idx];
+      const paint = paints[idx];
       if (!paint) return false;
 
       if (paintSubProp === "color" && paint.type === "SOLID") {
@@ -439,7 +458,7 @@ async function applySubstitution(
     // ── Strokes ──────────────────────────────────────────────────────────
     if (property === "strokes" && "strokes" in node && Array.isArray(node.strokes)) {
       const paints = [...node.strokes] as any[];
-      const paint  = paints[idx];
+      const paint = paints[idx];
       if (!paint) return false;
 
       if (paintSubProp === "color" && paint.type === "SOLID") {
@@ -467,7 +486,7 @@ async function applySubstitution(
     // This mirrors exactly how setBoundVariableForPaint works for fills/strokes.
     if (property === "effects" && "effects" in node && Array.isArray(node.effects)) {
       const effects = [...node.effects] as Effect[];
-      const effect  = effects[idx];
+      const effect = effects[idx];
       if (!effect || !paintSubProp) return false;
 
       // setBoundVariableForEffect is the correct API (available since plugin API 1.0)
@@ -626,11 +645,11 @@ async function processComponentNodes(
   components: ComponentNode[],
   maps: FrameMaps
 ): Promise<{
-  phase1Results:  SubstitutionResult[];
+  phase1Results: SubstitutionResult[];
   foundInstances: InstanceNode[];
 }> {
-  const phase1Results:  SubstitutionResult[] = [];
-  const foundInstances: InstanceNode[]       = [];
+  const phase1Results: SubstitutionResult[] = [];
+  const foundInstances: InstanceNode[] = [];
   const seenInstanceIds = new Set<string>();
 
   for (const component of components) {
@@ -667,7 +686,7 @@ async function processInstanceNodes(
       mainComponent = await node.getMainComponentAsync();
     } catch { /* external / inaccessible */ }
 
-    const mainId  = mainComponent?.id ?? null;
+    const mainId = mainComponent?.id ?? null;
     const inScope = mainId !== null && selectedComponentIds.has(mainId);
 
     if (inScope) continue;
@@ -693,28 +712,154 @@ async function processInstanceNodes(
 interface PipelineReport {
   phase1Results: SubstitutionResult[];
   phase2Results: SubstitutionResult[];
-  successCount:  number;
-  failedCount:   number;
-  skippedCount:  number;
-  total:         number;
+  swapResults: SwapResult[];
+  swapMissing: SwapResult[];
+  successCount: number;
+  failedCount: number;
+  skippedCount: number;
+  total: number;
 }
 
 function generateReport(
   phase1Results: SubstitutionResult[],
-  instanceResults: SubstitutionResult[]
+  instanceResults: SubstitutionResult[],
+  swapResults: SwapResult[],
+  swapMissing: SwapResult[]
 ): PipelineReport {
   const successCount = phase1Results.filter(r => r.status === "success").length;
-  const failedCount  = phase1Results.filter(r => r.status === "failed").length;
-  const skippedCount = instanceResults.length;
+  const failedCount = phase1Results.filter(r => r.status === "failed").length;
+  const skippedCount = instanceResults.length + swapMissing.length;
 
   return {
     phase1Results,
     phase2Results: instanceResults,
+    swapResults,
+    swapMissing,
     successCount,
     failedCount,
     skippedCount,
-    total: successCount + failedCount + skippedCount,
+    total: successCount + failedCount + skippedCount + swapResults.length,
   };
+}
+
+// ============================================================
+// FASE 3 — Swap de componentes remotos → locais
+// ============================================================
+
+/**
+ * Builds a map of local component name → ComponentNode.
+ * Uses loadAllPagesAsync() as required by documentAccess: dynamic-page,
+ * then scans every page for COMPONENT nodes with remote === false.
+ */
+async function buildLocalComponentMap(): Promise<Map<string, ComponentNode>> {
+  await figma.loadAllPagesAsync();
+  const map = new Map<string, ComponentNode>();
+  for (const page of figma.root.children) {
+    const locals = page.findAll(
+      (n) => n.type === "COMPONENT" && !(n as ComponentNode).remote
+    ) as ComponentNode[];
+    for (const c of locals) {
+      if (!map.has(c.name)) map.set(c.name, c);
+    }
+  }
+  return map;
+}
+
+/**
+ * Runs the swap phase on the already-resolved component list.
+ * Iterates all InstanceNodes inside each component; for each remote one,
+ * tries to find a local equivalent by name and swaps.
+ */
+async function runSwapPhase(selectedComponent: ComponentNode) {
+  await figma.loadAllPagesAsync();
+  const swapped: any[] = [];
+  const ignored: any[] = [];
+
+  // 🔎 Instâncias corretamente tipadas
+  const instances = selectedComponent.findAll(
+    node => node.type === "INSTANCE"
+  ) as InstanceNode[];
+
+  // 🔎 Componentes locais corretamente tipados
+  const localComponents = figma.root.findAll(
+    (node): node is ComponentNode =>
+      node.type === "COMPONENT" && node.remote === false
+  );
+
+  // 🔥 Mapa tipado corretamente
+  const localComponentMap = new Map<string, ComponentNode>();
+  for (const comp of localComponents) {
+    localComponentMap.set(comp.name, comp as ComponentNode);
+  }
+
+  for (const inst of instances) {
+    try {
+      if (inst.removed) continue;
+
+      const main = inst.mainComponent;
+      if (!main) {
+        ignored.push({
+          status: "no_main",
+          nodeId: inst.id,
+          nodeName: inst.name,
+        });
+        continue;
+      }
+
+      if (!main.remote) {
+        ignored.push({
+          status: "already_local",
+          nodeId: inst.id,
+          nodeName: inst.name,
+        });
+        continue;
+      }
+
+      // 🔐 Captura antes do swap
+      const instId = inst.id;
+      const instName = inst.name;
+      const mainName = main.name;
+
+      const localEquivalent = localComponentMap.get(mainName);
+
+      if (!localEquivalent) {
+        ignored.push({
+          status: "not_found",
+          nodeId: instId,
+          nodeName: instName,
+          mainComponentName: mainName,
+        });
+        continue;
+      }
+
+      try {
+        inst.swapComponent(localEquivalent);
+
+        swapped.push({
+          status: "swapped",
+          nodeId: instId,
+          nodeName: instName,
+          mainComponentName: mainName,
+        });
+      } catch (err) {
+        ignored.push({
+          status: "swap_error",
+          nodeId: instId,
+          nodeName: instName,
+          error: String(err),
+        });
+      }
+    } catch (err) {
+      ignored.push({
+        status: "unexpected_error",
+        nodeId: inst.id,
+        nodeName: inst.name,
+        error: String(err),
+      });
+    }
+  }
+
+  return { swapped, ignored };
 }
 
 // ============================================================
@@ -726,32 +871,44 @@ async function runPipeline(
   frames: FrameNode[]
 ): Promise<PipelineReport> {
 
+  // ── Fase 0: Coleta de variáveis ──────────────────────────
   postPhase("collecting", "Coletando variáveis dos frames de referência...");
   const maps = await buildFrameMaps(frames);
   const totalMapped = maps.varMap.size + maps.styleMap.size;
-  postPhase("collecting", `${totalMapped} token(s) encontrado(s) nos frames (${maps.varMap.size} variáveis, ${maps.styleMap.size} estilos de texto).`);
+  postPhase("collecting",
+    `${totalMapped} token(s) encontrado(s) (${maps.varMap.size} variáveis, ${maps.styleMap.size} estilos).`);
 
   const { components, selectedComponentIds } = await resolveComponentNodes(targets);
 
+  // ── Fase 1: Substituição de variáveis ────────────────────
   postPhase("phase1_components",
     `Fase 1 — Aplicando substituições em ${components.length} componente(s)...`);
-
   const { phase1Results, foundInstances } =
     await processComponentNodes(components, maps);
-
   const p1Success = phase1Results.filter(r => r.status === "success").length;
   postPhase("phase1_components",
     `Fase 1 concluída — ${p1Success} substituição(ões) aplicada(s).`);
 
+  // ── Fase 2: Instâncias externas ──────────────────────────
   postPhase("phase2_instances",
     `Fase 2 — Classificando ${foundInstances.length} instância(s)...`);
-
   const instanceResults = await processInstanceNodes(foundInstances, selectedComponentIds);
+  postPhase("phase2_instances",
+    `Fase 2 concluída — ${instanceResults.length} instância(s) externa(s).`);
 
+  // ── Fase 3: Swap de componentes remotos ──────────────────
+  let swapped: any[] = [];
+let ignored: any[] = [];
+
+for (const comp of components) {
+  const result = await runSwapPhase(comp as ComponentNode);
+  swapped.push(...result.swapped);
+  ignored.push(...result.ignored);
+}
   postPhase("done",
-    `Concluído — ${instanceResults.length} instância(s) externa(s) ignorada(s).`);
+    `Concluído — ${swapped.length} swap(s), ${ignored.length} sem equivalente local.`);
 
-  return generateReport(phase1Results, instanceResults);
+  return generateReport(phase1Results, instanceResults, swapped, ignored);
 }
 
 // ============================================================
@@ -761,7 +918,7 @@ async function runPipeline(
 async function analyzeSelection(): Promise<void> {
   const selection = figma.currentPage.selection;
   const targets: TargetNode[] = [];
-  const frames:  FrameNode[]  = [];
+  const frames: FrameNode[] = [];
 
   for (const node of selection) {
     if (
@@ -810,7 +967,7 @@ figma.ui.onmessage = async (msg) => {
   if (msg.type === "run") {
     const selection = figma.currentPage.selection;
     const targets: TargetNode[] = [];
-    const frames:  FrameNode[]  = [];
+    const frames: FrameNode[] = [];
 
     for (const node of selection) {
       if (
@@ -825,13 +982,17 @@ figma.ui.onmessage = async (msg) => {
     }
 
     if (targets.length === 0) {
-      figma.ui.postMessage({ type: "error",
-        message: "Selecione pelo menos um Component Set, Component ou Instance como destino." });
+      figma.ui.postMessage({
+        type: "error",
+        message: "Selecione pelo menos um Component Set, Component ou Instance como destino."
+      });
       return;
     }
     if (frames.length === 0) {
-      figma.ui.postMessage({ type: "error",
-        message: "Selecione pelo menos um Frame como origem das variáveis." });
+      figma.ui.postMessage({
+        type: "error",
+        message: "Selecione pelo menos um Frame como origem das variáveis."
+      });
       return;
     }
 

@@ -247,6 +247,7 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .selection-panel { display: flex; flex-direction: column; gap: 6px; }
+
   </style>
 </head>
 <body>
@@ -261,7 +262,7 @@
     <div class="header">
       <div class="header-text">
         <h1>Variable Substitution</h1>
-        <div class="subtitle">Substitui variáveis por nome — cores, tipografia e efeitos</div>
+        <div class="subtitle">Substitui variáveis e faz swap de componentes remotos</div>
       </div>
     </div>
 
@@ -278,7 +279,6 @@
 
     <div class="divider"></div>
 
-    <!-- Phase stepper shown while running -->
     <div class="phase-stepper" id="phaseStepper">
       <div class="phase-row" id="phase-collecting">
         <div class="phase-dot"></div>
@@ -288,16 +288,20 @@
       <div class="phase-row" id="phase-p1">
         <div class="phase-dot"></div>
         <span class="phase-label">Fase 1</span>
-        <span class="phase-msg" id="msg-p1">Componentes mães</span>
+        <span class="phase-msg" id="msg-p1">Variáveis</span>
       </div>
       <div class="phase-row" id="phase-p2">
         <div class="phase-dot"></div>
         <span class="phase-label">Fase 2</span>
         <span class="phase-msg" id="msg-p2">Instâncias externas</span>
       </div>
+      <div class="phase-row" id="phase-p3">
+        <div class="phase-dot"></div>
+        <span class="phase-label">Fase 3</span>
+        <span class="phase-msg" id="msg-p3">Swap de componentes</span>
+      </div>
     </div>
 
-    <!-- Idle hint shown when not running -->
     <div class="idle-hint" id="idleHint">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
@@ -329,11 +333,13 @@
 
     <div class="results-box">
       <div class="result-tabs">
-        <div class="result-tab active"   onclick="switchTab('ok')"   id="tab-ok">✓ Aplicadas</div>
-        <div class="result-tab skip-tab" onclick="switchTab('skip')" id="tab-skip" style="display:none">⚠ Ignoradas</div>
-        <div class="result-tab fail-tab" onclick="switchTab('fail')" id="tab-fail" style="display:none">✗ Falhas</div>
+        <div class="result-tab active"   onclick="switchTab('ok')"       id="tab-ok">✓ Variáveis</div>
+        <div class="result-tab"          onclick="switchTab('swapped')"  id="tab-swapped" style="display:none">↔ Swaps</div>
+        <div class="result-tab skip-tab" onclick="switchTab('skip')"     id="tab-skip" style="display:none">⚠ Ignoradas</div>
+        <div class="result-tab fail-tab" onclick="switchTab('fail')"     id="tab-fail" style="display:none">✗ Falhas</div>
       </div>
       <div class="tab-panel active" id="panel-ok"></div>
+      <div class="tab-panel"        id="panel-swapped"></div>
       <div class="tab-panel"        id="panel-skip"></div>
       <div class="tab-panel"        id="panel-fail"></div>
 
@@ -356,21 +362,26 @@
 
   function goBack() {
     document.getElementById('pages').classList.remove('show-results');
-    // Reset stepper for next run
     resetStepper();
     setRunning(false);
+    // Reset tab visibility
+    document.getElementById('tab-swapped').style.display = 'none';
+    document.getElementById('tab-skip').style.display    = 'none';
+    document.getElementById('tab-fail').style.display    = 'none';
+    switchTab('ok');
   }
 
   // ── Phase stepper ───────────────────────────────────────────────────────
 
   function resetStepper() {
-    ['phase-collecting','phase-p1','phase-p2'].forEach(id => {
+    ['phase-collecting','phase-p1','phase-p2','phase-p3'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove('active','complete');
     });
     document.getElementById('msg-collecting').textContent = 'Aguardando...';
-    document.getElementById('msg-p1').textContent         = 'Componentes mães';
+    document.getElementById('msg-p1').textContent         = 'Variáveis';
     document.getElementById('msg-p2').textContent         = 'Instâncias externas';
+    document.getElementById('msg-p3').textContent         = 'Swap de componentes';
     document.getElementById('phaseStepper').classList.remove('visible');
     document.getElementById('idleHint').style.display = 'flex';
   }
@@ -379,20 +390,25 @@
     { key: 'collecting',        rowId: 'phase-collecting', msgId: 'msg-collecting' },
     { key: 'phase1_components', rowId: 'phase-p1',         msgId: 'msg-p1'         },
     { key: 'phase2_instances',  rowId: 'phase-p2',         msgId: 'msg-p2'         },
-    { key: 'done',              rowId: 'phase-p2',         msgId: 'msg-p2'         },
+    { key: 'phase3_swap',       rowId: 'phase-p3',         msgId: 'msg-p3'         },
+    { key: 'done',              rowId: 'phase-p3',         msgId: 'msg-p3'         },
   ];
+
+  const UNIQUE_ROWS = ['phase-collecting', 'phase-p1', 'phase-p2', 'phase-p3'];
 
   function setPhase(phaseKey, message) {
     const currentIdx = PHASES.findIndex(p => p.key === phaseKey);
     if (currentIdx === -1) return;
 
-    const uniqueRows = ['phase-collecting', 'phase-p1', 'phase-p2'];
-    uniqueRows.forEach((rowId, i) => {
+    // Map phase index to row index (done shares phase-p3 = row index 3)
+    const activeRow = Math.min(currentIdx, UNIQUE_ROWS.length - 1);
+
+    UNIQUE_ROWS.forEach((rowId, i) => {
       const row = document.getElementById(rowId);
       if (!row) return;
       row.classList.remove('active', 'complete');
-      if (i < currentIdx) row.classList.add('complete');
-      else if (i === Math.min(currentIdx, 2)) row.classList.add('active');
+      if (i < activeRow) row.classList.add('complete');
+      else if (i === activeRow) row.classList.add('active');
     });
 
     if (message) {
@@ -402,8 +418,8 @@
     }
 
     if (phaseKey === 'done') {
-      document.getElementById('phase-p2').classList.remove('active');
-      document.getElementById('phase-p2').classList.add('complete');
+      document.getElementById('phase-p3').classList.remove('active');
+      document.getElementById('phase-p3').classList.add('complete');
     }
   }
 
@@ -426,7 +442,7 @@
   function run() {
     if (isRunning) return;
     setRunning(true);
-    document.getElementById('idleHint').style.display   = 'none';
+    document.getElementById('idleHint').style.display = 'none';
     document.getElementById('phaseStepper').classList.add('visible');
     setPhase('collecting', 'Coletando variáveis...');
     parent.postMessage({ pluginMessage: { type: 'run' } }, '*');
@@ -435,43 +451,46 @@
   // ── Tabs ─────────────────────────────────────────────────────────────────
 
   function switchTab(name) {
-    ['ok','skip','fail'].forEach(t => {
-      document.getElementById(`tab-${t}`).classList.toggle('active', t === name);
-      document.getElementById(`panel-${t}`).classList.toggle('active', t === name);
+    ['ok','swapped','skip','fail'].forEach(t => {
+      const tab   = document.getElementById(`tab-${t}`);
+      const panel = document.getElementById(`panel-${t}`);
+      if (tab)   tab.classList.toggle('active', t === name);
+      if (panel) panel.classList.toggle('active', t === name);
     });
   }
 
   // ── Selection UI ─────────────────────────────────────────────────────────
 
   function updateSelectionUI(targets, frames) {
-    // Don't update selection tags while results are showing — user may be reviewing
-    // but we still accept the new data for the next run after going back.
-    // Tags will reflect current selection once back on page 1.
+    hasTargets = targets.length > 0;
 
-    const row   = document.getElementById('targetsRow');
-    const empty = document.getElementById('targetsEmpty');
-    hasTargets  = targets.length > 0;
-    row.querySelectorAll('.tag').forEach(t => t.remove());
-
-    if (hasTargets) {
-      row.className = 'tag-row dest-row has-items';
-      empty.style.display = 'none';
-      targets.forEach(t => {
-        const tag = document.createElement('div');
-        const cls = t.type === 'COMPONENT_SET' ? 'tag-set'
-                  : t.type === 'COMPONENT'     ? 'tag-component' : 'tag-instance';
-        const badge = t.type === 'COMPONENT_SET'
-          ? `<span class="tag-badge">${t.variantCount}v</span>` : '';
-        const label = (t.type === 'INSTANCE' && t.mainName)
-          ? `${esc(t.name)} <span style="opacity:.6;font-size:10px">→ ${esc(t.mainName)}</span>`
-          : esc(t.name);
-        tag.className = `tag ${cls}`;
-        tag.innerHTML = `<span class="tag-name">${label}</span>${badge}`;
-        row.appendChild(tag);
-      });
-    } else {
-      row.className = 'tag-row dest-row empty-row';
-      empty.style.display = '';
+    // Populate both dest rows (vars mode + swap mode) from the same targets
+    for (const rowId of ['targetsRow', 'swapTargetsRow']) {
+      const row   = document.getElementById(rowId);
+      const emptyId = rowId === 'targetsRow' ? 'targetsEmpty' : 'swapTargetsEmpty';
+      const empty = document.getElementById(emptyId);
+      if (!row) continue;
+      row.querySelectorAll('.tag').forEach(t => t.remove());
+      if (hasTargets) {
+        row.className = 'tag-row dest-row has-items';
+        empty.style.display = 'none';
+        targets.forEach(t => {
+          const tag = document.createElement('div');
+          const cls = t.type === 'COMPONENT_SET' ? 'tag-set'
+                    : t.type === 'COMPONENT'     ? 'tag-component' : 'tag-instance';
+          const badge = t.type === 'COMPONENT_SET'
+            ? `<span class="tag-badge">${t.variantCount}v</span>` : '';
+          const label = (t.type === 'INSTANCE' && t.mainName)
+            ? `${esc(t.name)} <span style="opacity:.6;font-size:10px">→ ${esc(t.mainName)}</span>`
+            : esc(t.name);
+          tag.className = `tag ${cls}`;
+          tag.innerHTML = `<span class="tag-name">${label}</span>${badge}`;
+          row.appendChild(tag);
+        });
+      } else {
+        row.className = 'tag-row dest-row empty-row';
+        empty.style.display = '';
+      }
     }
 
     const fRow   = document.getElementById('framesRow');
@@ -501,30 +520,40 @@
   function displayResults(data) {
     setRunning(false);
 
-    const okItems   = (data.phase1Results || []).filter(r => r.status === 'success');
-    const failItems = (data.phase1Results || []).filter(r => r.status === 'failed');
-    const skipItems = data.phase2Results || [];
+    const okItems      = (data.phase1Results || []).filter(r => r.status === 'success');
+    const failItems    = (data.phase1Results || []).filter(r => r.status === 'failed');
+    const skipItems    = data.phase2Results  || [];
+    const swappedItems = data.swapResults    || [];
+    // swapMissing uses mainComponentName as the group label — normalise to nodeName for renderSkipPanel
+    const swapMissing  = (data.swapMissing   || []).map(r => ({ ...r, nodeName: r.mainComponentName }));
 
+    const tabSwapped = document.getElementById('tab-swapped');
+    const tabSkip    = document.getElementById('tab-skip');
+    const tabFail    = document.getElementById('tab-fail');
+
+    tabSwapped.style.display = swappedItems.length > 0 ? '' : 'none';
+    tabSkip.style.display    = (skipItems.length + swapMissing.length) > 0 ? '' : 'none';
+    tabFail.style.display    = failItems.length > 0 ? '' : 'none';
+
+    document.getElementById('tab-ok').textContent = `✓ Variáveis (${okItems.length})`;
+    tabSwapped.textContent = `↔ Swaps (${swappedItems.length})`;
+    tabSkip.textContent    = `⚠ Ignoradas (${skipItems.length + swapMissing.length})`;
+    if (failItems.length > 0) tabFail.textContent = `✗ Falhas (${failItems.length})`;
+
+    const totalOk   = okItems.length + swappedItems.length;
+    const totalSkip = skipItems.length + swapMissing.length;
     document.getElementById('statPills').innerHTML = `
-      <span class="pill ok">✓ ${okItems.length}</span>
-      ${skipItems.length > 0 ? `<span class="pill skip">⚠ ${skipItems.length}</span>` : ''}
+      <span class="pill ok">✓ ${totalOk}</span>
+      ${totalSkip > 0 ? `<span class="pill skip">⚠ ${totalSkip}</span>` : ''}
       ${failItems.length > 0 ? `<span class="pill fail">✗ ${failItems.length}</span>` : ''}
-      <span class="pill neutral">${okItems.length + skipItems.length + failItems.length} total</span>`;
+      <span class="pill neutral">${totalOk + totalSkip + failItems.length} total</span>`;
 
-    const tabSkip = document.getElementById('tab-skip');
-    const tabFail = document.getElementById('tab-fail');
-    tabSkip.style.display = skipItems.length > 0 ? '' : 'none';
-    tabFail.style.display = failItems.length > 0 ? '' : 'none';
-
-    document.getElementById('tab-ok').textContent  = `✓ Aplicadas (${okItems.length})`;
-    if (skipItems.length > 0) tabSkip.textContent  = `⚠ Ignoradas (${skipItems.length})`;
-    if (failItems.length > 0) tabFail.textContent  = `✗ Falhas (${failItems.length})`;
-
-    switchTab('ok');
     renderOkPanel(okItems);
-    renderSkipPanel(skipItems);
+    renderSwappedPanel(swappedItems);
+    renderSkipPanel([...skipItems, ...swapMissing]);
     renderFailPanel(failItems);
 
+    switchTab('ok');
     showResults();
   }
 
@@ -675,6 +704,22 @@
 
       panel.appendChild(group);
     }
+  }
+
+  function renderSwappedPanel(items) {
+    const panel = document.getElementById('panel-swapped');
+    if (!items || !items.length) {
+      panel.innerHTML = `<div class="tab-empty">Nenhum componente remoto foi encontrado para trocar.</div>`;
+      return;
+    }
+    panel.innerHTML = items.map(r => `
+      <div class="result-item ok">
+        ${iconOk}
+        <div class="ri-body">
+          <div class="ri-node">${esc(r.nodeName)}</div>
+          <div class="ri-detail"><span class="ri-prop">swap</span>${esc(short(r.mainComponentName))}</div>
+        </div>
+      </div>`).join('');
   }
 
   function renderFailPanel(items) {
