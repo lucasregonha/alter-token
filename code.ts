@@ -235,9 +235,7 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
     }
   }
 
-  // ── 4b. effectStyleId (Effect Styles from external libraries) ────────────
-  // Same pattern as textStyleId: boundVariables is empty, the binding lives in
-  // effectStyleId. We resolve the style name and emit a synthetic binding.
+  // ── 4b. effectStyleId ────────────────────────────────────────────────
   if ("effectStyleId" in node) {
     const styleId = (node as any).effectStyleId as string;
     if (styleId && styleId.length > 0) {
@@ -256,22 +254,10 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
     }
   }
 
-  // ── 5. TextNode typography variables — full debug probe ──────────────
+  // ── 5. TextNode typography variables ─────────────────────────────────
   if (node.type === "TEXT") {
     const textNode = node as TextNode;
 
-    // ── Typography via textStyleId ────────────────────────────────────────
-    // Figma does NOT expose typography variable bindings in boundVariables
-    // for text nodes — especially from external libraries.
-    // The only mechanism is: a Text Style is applied (textStyleId), and that
-    // style was created/bound to a variable collection in the library.
-    // We surface the textStyleId as a synthetic binding keyed by the style name,
-    // so the frame-map lookup can match by normalized style name.
-    //
-    // getStyledTextSegments only accepts these fields: fontSize, lineHeight,
-    // letterSpacing, paragraphSpacing, paragraphIndent, fontName, fontWeight,
-    // fontStyle, textCase, textDecoration, fills, textStyleId, fillStyleId,
-    // boundVariables. fontFamily is NOT valid.
     const VALID_SEGMENT_FIELDS: any[] = [
       "fontSize", "lineHeight", "letterSpacing",
       "paragraphSpacing", "paragraphIndent",
@@ -286,7 +272,6 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
       for (const seg of segments) {
         const s = seg as any;
 
-        // 1. Real variable alias in segment boundVariables (scalar typo tokens)
         if (s.boundVariables && typeof s.boundVariables === "object") {
           for (const prop of Object.keys(s.boundVariables)) {
             const alias = s.boundVariables[prop] as any;
@@ -307,8 +292,6 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
           }
         }
 
-        // 2. textStyleId — resolve the style and treat its name as the variable name
-        // This is how "Paragraph/XXS" applied from a library surfaces in the plugin.
         if (s.textStyleId && typeof s.textStyleId === "string") {
           const styleId = s.textStyleId as string;
           const dk = "style|" + styleId;
@@ -317,8 +300,6 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
             try {
               const style = await figma.getStyleByIdAsync(styleId);
               if (style && style.name) {
-                // Emit a synthetic binding: variableId = styleId, variableName = style.name
-                // applySubstitution will handle property === "textStyleId" specially.
                 bindings.push({
                   nodeId: node.id, nodeName: node.name,
                   property: "textStyleId",
@@ -341,16 +322,9 @@ async function extractVariableBindings(node: SceneNode): Promise<VariableBinding
 // FRAME VARIABLE MAP  +  FRAME STYLE MAP
 // ============================================================
 
-// Two maps are built from the reference frames:
-//   frameVarMap   — normalized variable name  → Variable   (colors, spacing, etc.)
-//   frameStyleMap — normalized style name     → styleId    (text styles / typography)
-//
-// Text style bindings use property="textStyleId" and their variableId IS the styleId.
-// They cannot go through figma.variables.getVariableByIdAsync, so they live separately.
-
 interface FrameMaps {
   varMap: Map<string, Variable>;
-  styleMap: Map<string, string>;  // normalizedName → styleId
+  styleMap: Map<string, string>;
 }
 
 async function buildFrameMaps(frames: FrameNode[]): Promise<FrameMaps> {
@@ -364,7 +338,6 @@ async function buildFrameMaps(frames: FrameNode[]): Promise<FrameMaps> {
         const key = normalizeName(b.variableName);
 
         if (b.property === "textStyleId" || b.property === "effectStyleId") {
-          // b.variableId holds the styleId
           if (!styleMap.has(key)) styleMap.set(key, b.variableId);
         } else {
           if (!varMap.has(key)) {
@@ -410,14 +383,6 @@ async function ensureFontsLoaded(node: TextNode): Promise<void> {
 // SUBSTITUTION APPLICATION
 // ============================================================
 
-/**
- * Applies a single variable binding substitution to a node.
- *
- * Fills / Strokes  → figma.variables.setBoundVariableForPaint  (same as before ✅)
- * Effects          → figma.variables.setBoundVariableForEffect  (NEW — mirrors paint API)
- * Typography       → load fonts first, then node.setBoundVariable (same scalar path)
- * Generic scalars  → node.setBoundVariable
- */
 async function applySubstitution(
   node: SceneNode,
   binding: VariableBinding,
@@ -440,7 +405,6 @@ async function applySubstitution(
           paint as SolidPaint, "color", newVariable
         );
       } else if (paintSubProp) {
-        // opacity and any other paint sub-property: manual boundVariables spread
         paints[idx] = {
           ...paint,
           boundVariables: {
@@ -466,7 +430,6 @@ async function applySubstitution(
           paint as SolidPaint, "color", newVariable
         );
       } else if (paintSubProp) {
-        // opacity and any other paint sub-property: manual boundVariables spread
         paints[idx] = {
           ...paint,
           boundVariables: {
@@ -482,14 +445,11 @@ async function applySubstitution(
     }
 
     // ── Effects ───────────────────────────────────────────────────────────
-    // MUST use setBoundVariableForEffect — manual spread does NOT persist in Figma.
-    // This mirrors exactly how setBoundVariableForPaint works for fills/strokes.
     if (property === "effects" && "effects" in node && Array.isArray(node.effects)) {
       const effects = [...node.effects] as Effect[];
       const effect = effects[idx];
       if (!effect || !paintSubProp) return false;
 
-      // setBoundVariableForEffect is the correct API (available since plugin API 1.0)
       const updatedEffect = figma.variables.setBoundVariableForEffect(
         effect,
         paintSubProp as VariableBindableEffectField,
@@ -503,8 +463,6 @@ async function applySubstitution(
     // ── Typography (TextNode) ─────────────────────────────────────────────
     if (node.type === "TEXT") {
       await ensureFontsLoaded(node as TextNode);
-
-      // Scalar typography variable (fontSize, lineHeight, etc.)
       (node as TextNode).setBoundVariable(
         property as VariableBindableTextField,
         newVariable
@@ -512,7 +470,7 @@ async function applySubstitution(
       return true;
     }
 
-    // ── Generic scalar (spacing, radius, opacity, …) ─────────────────────
+    // ── Generic scalar ────────────────────────────────────────────────────
     if ("setBoundVariable" in node) {
       (node as any).setBoundVariable(property, newVariable);
       return true;
@@ -580,7 +538,6 @@ async function applySubstitutionsToNode(
       continue;
     }
 
-    // Regular variable substitution
     const frameVar = maps.varMap.get(key);
     if (!frameVar) continue;
     if (frameVar.id === binding.variableId) continue;
@@ -745,121 +702,109 @@ function generateReport(
 // ============================================================
 // FASE 3 — Swap de componentes remotos → locais
 // ============================================================
-
-/**
- * Builds a map of local component name → ComponentNode.
- * Uses loadAllPagesAsync() as required by documentAccess: dynamic-page,
- * then scans every page for COMPONENT nodes with remote === false.
- */
-async function buildLocalComponentMap(): Promise<Map<string, ComponentNode>> {
-  await figma.loadAllPagesAsync();
-  const map = new Map<string, ComponentNode>();
-  for (const page of figma.root.children) {
-    const locals = page.findAll(
-      (n) => n.type === "COMPONENT" && !(n as ComponentNode).remote
-    ) as ComponentNode[];
-    for (const c of locals) {
-      if (!map.has(c.name)) map.set(c.name, c);
-    }
-  }
-  return map;
-}
-
-/**
- * Runs the swap phase on the already-resolved component list.
- * Iterates all InstanceNodes inside each component; for each remote one,
- * tries to find a local equivalent by name and swaps.
- */
-async function runSwapPhase(selectedComponent: ComponentNode) {
+async function runSwapPhase(
+  selectedComponent: ComponentNode,
+  processedInstIds: Set<string>   // ← novo parâmetro
+) {
   await figma.loadAllPagesAsync();
   const swapped: any[] = [];
   const ignored: any[] = [];
 
-  // 🔎 Instâncias corretamente tipadas
-  const instances = selectedComponent.findAll(
-    node => node.type === "INSTANCE"
-  ) as InstanceNode[];
+  function collectDirectInstances(node: SceneNode, result: InstanceNode[]): void {
+    if (node.type === "INSTANCE") {
+      result.push(node as InstanceNode);
+      return;
+    }
+    if ("children" in node) {
+      for (const child of (node as ChildrenMixin).children) {
+        if (isSceneNode(child)) collectDirectInstances(child, result);
+      }
+    }
+  }
 
-  // 🔎 Componentes locais corretamente tipados
-  const localComponents = figma.root.findAll(
-    (node): node is ComponentNode =>
-      node.type === "COMPONENT" && node.remote === false
-  );
+  const instances: InstanceNode[] = [];
+  collectDirectInstances(selectedComponent, instances);
 
-  // 🔥 Mapa tipado corretamente
   const localComponentMap = new Map<string, ComponentNode>();
-  for (const comp of localComponents) {
-    localComponentMap.set(comp.name, comp as ComponentNode);
+  for (const page of figma.root.children) {
+    const locals = page.findAll(
+      (n): n is ComponentNode => n.type === "COMPONENT" && !n.remote
+    ) as ComponentNode[];
+    for (const comp of locals) {
+      const setName = comp.parent?.type === "COMPONENT_SET" ? comp.parent.name : null;
+      if (setName) {
+        const qualKey = `${setName}/${comp.name}`;
+        if (!localComponentMap.has(qualKey)) localComponentMap.set(qualKey, comp);
+      }
+      if (!localComponentMap.has(comp.name)) localComponentMap.set(comp.name, comp);
+    }
   }
 
   for (const inst of instances) {
     try {
       if (inst.removed) continue;
 
-      const main = inst.mainComponent;
+      const instId = inst.id;
+      const instName = inst.name;
+
+      // Pula instâncias já processadas em iterações anteriores do loop
+      if (processedInstIds.has(instId)) continue;
+      processedInstIds.add(instId);
+
+      let main: ComponentNode | null = null;
+      try {
+        main = await inst.getMainComponentAsync();
+      } catch {
+        ignored.push({ status: "no_main", nodeId: instId, nodeName: instName });
+        continue;
+      }
+
       if (!main) {
-        ignored.push({
-          status: "no_main",
-          nodeId: inst.id,
-          nodeName: inst.name,
-        });
+        ignored.push({ status: "no_main", nodeId: instId, nodeName: instName });
         continue;
       }
 
       if (!main.remote) {
-        ignored.push({
-          status: "already_local",
-          nodeId: inst.id,
-          nodeName: inst.name,
-        });
+        // already_local é filtrado no return — não aparece na UI
+        ignored.push({ status: "already_local", nodeId: instId, nodeName: instName, mainComponentName: main.name });
         continue;
       }
 
-      // 🔐 Captura antes do swap
-      const instId = inst.id;
-      const instName = inst.name;
       const mainName = main.name;
 
-      const localEquivalent = localComponentMap.get(mainName);
+      const qualifiedKey = `${instName}/${mainName}`;
+      let localEquivalent = localComponentMap.get(qualifiedKey);
 
       if (!localEquivalent) {
-        ignored.push({
-          status: "not_found",
-          nodeId: instId,
-          nodeName: instName,
-          mainComponentName: mainName,
-        });
+        const candidate = localComponentMap.get(mainName);
+        if (candidate) {
+          const candidateSetName = candidate.parent?.type === "COMPONENT_SET"
+            ? candidate.parent.name
+            : candidate.name;
+          if (candidateSetName === instName) localEquivalent = candidate;
+        }
+      }
+
+      if (!localEquivalent) {
+        ignored.push({ status: "not_found", nodeId: instId, nodeName: instName, mainComponentName: mainName });
         continue;
       }
 
       try {
         inst.swapComponent(localEquivalent);
-
-        swapped.push({
-          status: "swapped",
-          nodeId: instId,
-          nodeName: instName,
-          mainComponentName: mainName,
-        });
+        swapped.push({ status: "swapped", nodeId: instId, nodeName: instName, mainComponentName: mainName });
       } catch (err) {
-        ignored.push({
-          status: "swap_error",
-          nodeId: instId,
-          nodeName: instName,
-          error: String(err),
-        });
+        ignored.push({ status: "swap_error", nodeId: instId, nodeName: instName, mainComponentName: mainName, error: String(err) });
       }
     } catch (err) {
-      ignored.push({
-        status: "unexpected_error",
-        nodeId: inst.id,
-        nodeName: inst.name,
-        error: String(err),
-      });
+      ignored.push({ status: "unexpected_error", nodeId: inst.id, nodeName: inst.name, error: String(err) });
     }
   }
 
-  return { swapped, ignored };
+  return {
+    swapped,
+    ignored: ignored.filter((r: any) => r.status !== "already_local"),
+  };
 }
 
 // ============================================================
@@ -897,18 +842,47 @@ async function runPipeline(
     `Fase 2 concluída — ${instanceResults.length} instância(s) externa(s).`);
 
   // ── Fase 3: Swap de componentes remotos ──────────────────
-  let swapped: any[] = [];
-let ignored: any[] = [];
+  postPhase("phase3_swap", "Fase 3 — Fazendo swap de componentes remotos...");
 
-for (const comp of components) {
-  const result = await runSwapPhase(comp as ComponentNode);
-  swapped.push(...result.swapped);
-  ignored.push(...result.ignored);
-}
+  const allSwapped: any[] = [];
+  const allIgnored: any[] = [];
+  const processedInstIds = new Set<string>();
+
+  for (const comp of components) {
+    const result = await runSwapPhase(comp as ComponentNode, processedInstIds);
+    allSwapped.push(...result.swapped);
+    allIgnored.push(...result.ignored);
+  }
+
+  // Remove do ignored qualquer ID ou nome que foi swappado com sucesso
+  const swappedIds = new Set(allSwapped.map((r: any) => r.nodeId));
+  const swappedNames = new Set(allSwapped.map((r: any) => r.nodeName));
+
+  const filteredIgnored = allIgnored.filter((r: any) =>
+    !swappedIds.has(r.nodeId) && !swappedNames.has(r.nodeName)
+  );
+
+  // Filtra instanceResults (fase 2) removendo o que foi swappado na fase 3
+  const filteredInstanceResults = instanceResults.filter((r: any) =>
+    !swappedIds.has(r.nodeId) && !swappedNames.has(r.nodeName)
+  );
+
+  // Agrupa ignored por "nodeName|mainComponentName"
+  const ignoredGroupMap = new Map<string, any>();
+  for (const r of filteredIgnored) {
+    const key = `${r.nodeName}|${r.mainComponentName ?? ""}`;
+    if (!ignoredGroupMap.has(key)) {
+      ignoredGroupMap.set(key, { ...r, nodeIds: [r.nodeId] });
+    } else {
+      ignoredGroupMap.get(key).nodeIds.push(r.nodeId);
+    }
+  }
+  const dedupedIgnored = Array.from(ignoredGroupMap.values());
+
   postPhase("done",
-    `Concluído — ${swapped.length} swap(s), ${ignored.length} sem equivalente local.`);
+    `Concluído — ${allSwapped.length} swap(s), ${dedupedIgnored.length} sem equivalente local.`);
 
-  return generateReport(phase1Results, instanceResults, swapped, ignored);
+  return generateReport(phase1Results, filteredInstanceResults, allSwapped, dedupedIgnored);
 }
 
 // ============================================================
